@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Chat;
 
 class User extends Authenticatable
 {
@@ -42,4 +43,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function chats()
+    {
+        return $this->hasManyThrough(
+            Chat::class,
+            'chat_users',
+            'user_id',
+            'id',
+            'id',
+            'chat_id'
+        );
+    }
 }
