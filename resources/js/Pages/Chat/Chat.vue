@@ -15,7 +15,7 @@
 </script>
 
 <template>
-    <Head title="Chat" />
+    <!-- <Head title="Chat" /> -->
 
     <AuthenticatedLayout>
         <div class="py-12">
@@ -27,6 +27,8 @@
                                 {{ message.content }} <br><br>
                             </p>
                         </div>
+
+                        <v-btn></v-btn>
 
                         <div class="input-container">
                             <input placeholder="Chat..." class="chat-input bg-white rounded-lg" />
@@ -42,7 +44,9 @@
         height: 80vh;
     }
     .chat-window {
-        width: 30vw;
+        min-width: 30rem;
+        max-width: 50%;
+        width: 50vw;
         margin: 2em auto;
     }
     .content-container {
