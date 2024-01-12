@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
+use App\Models\Chat;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -38,9 +39,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/chat', function () {
         return Inertia::render('Chat/Chat', [
-            'members' => [
-                'user' => Auth::user(),
-            ]
+            'user' => Auth::user(),
+            'chat' => Chat::with('users', 'messages')->first(),
         ]);
     })->name('chat');
 });
