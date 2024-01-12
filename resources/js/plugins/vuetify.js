@@ -1,3 +1,6 @@
-import { createVuetify } from "vuetify";
+import { Vue } from 'vue';
+import Vuetify from 'vuetify';
 
-export default createVuetify();
+Vue.use(Vuetify);
+
+export default new Vuetify();
