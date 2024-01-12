@@ -48,7 +48,7 @@
     .content-container {
         height: 90%;
         margin: 1rem 0;
-        overflow: scroll;
+        overflow-y: scroll;
     }
     .chat-input {
         width: 100%;
