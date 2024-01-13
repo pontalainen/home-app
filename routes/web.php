@@ -37,12 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/chat', function () {
-        return Inertia::render('Chat/Chat', [
-            'user' => Auth::user(),
-            'chat' => Chat::with('users', 'messages')->first(),
-        ]);
-    })->name('chat');
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat');
 });
 
 require __DIR__ . '/auth.php';

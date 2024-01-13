@@ -11,6 +11,13 @@ class Chat extends Model
 {
     use HasFactory;
 
+    public static function getChat()
+    {
+        return self::with(['users', 'messages' => function ($query) {
+            $query->with('user')->latest()->take(25);
+        }])->first();
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'chat_users');
