@@ -13,8 +13,9 @@ class Chat extends Model
 
     public static function getChat()
     {
-        return self::with(['users', 'messages' => function ($query) {
-            $query->with('user')->latest()->take(25);
+        return self::with(['users', 'messages' => function ($q) {
+            $messages = $q->with('user')->latest()->take(25)->get();
+            return $messages->reverse();
         }])->first();
     }
 

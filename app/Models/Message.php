@@ -18,8 +18,35 @@ class Message extends Model
         'user_id',
     ];
 
-    public static function sendMessage()
+    public static function loadMessages(Chat $chat, $lastMessageId)
     {
+        $firstMessageId = Message::first()->id;
+
+        // If the lastMessageId is the id of the last message in the database, return an empty collection
+        if ($lastMessageId <= $firstMessageId) {
+            return collect([]);
+        }
+
+        // Otherwise, return the messages that have an id greater than the lastMessageId
+        return $chat->messages()
+            ->with(['chat', 'user'])
+            ->latest()
+            ->where('id', '<', $lastMessageId)
+            ->where('id', '>=', $firstMessageId)
+            ->take(25)
+            ->get();
+    }
+
+    public static function sendMessage(Chat $chat, User $user, $content)
+    {
+        $message = new self();
+        $message->content = $content;
+        $message->sent_at = now();
+        $message->chat()->associate($chat);
+        $message->user()->associate($user);
+        $message->save();
+
+        return $message;
     }
 
     public function chat()

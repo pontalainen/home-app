@@ -20,6 +20,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::name('chat::')->group(function () {
-    // Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
+    Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
 });
