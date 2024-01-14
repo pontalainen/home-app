@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
@@ -21,7 +22,7 @@ class ChatController extends Controller
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
             'chat' => $chat,
-            'lastMessageId' => $chat ? $chat->messages->last()->id : 1,
+            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
     }
 
@@ -45,7 +46,9 @@ class ChatController extends Controller
     {
         $this->middleware('auth');
         try {
-            Message::sendMessage($chat, $user, $request->content);
+            $newMessage = Message::sendMessage($chat, $user, $request->content);
+            event(new MessageSent($newMessage));
+
             return 'ok';
         } catch (Exception $e) {
             return $e;

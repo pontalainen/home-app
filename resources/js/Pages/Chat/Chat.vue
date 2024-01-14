@@ -3,6 +3,8 @@
     import { toRefs, ref, onMounted, nextTick } from 'vue';
     import { Head } from '@inertiajs/vue3';
 
+    const Echo = window.Echo;
+
     const props = defineProps({
         user: {
             type: Object,
@@ -22,33 +24,23 @@
     chat.value.messages = chat.value.messages.reverse();
 
     const newMessage = ref('');
+    let chatScroll = ref(null);
+    let isAtBottom = ref(true);
 
     const sendMessage = async () => {
-        // Don't send an empty message
         if (newMessage.value === '') {
             return;
         }
 
         try {
-            // Make the API call to send the message
             const resp = await axios.post(route('chat::sendMessage', {chat: chat.value, user: user.value}), {
                 content: newMessage.value,
             });
 
-            // Push the new message to the local array of messages
-            chat.value.messages.push({
-                content: newMessage.value,
-                user: user.value,
-                created_at: new Date().toISOString() // Use the current time
-            });
-
-            // Clear the new message input
             newMessage.value = '';
 
-            if (await resp) {
-                const objDiv = document.getElementById("chat-scroll");
-                objDiv.scrollTop = objDiv.scrollHeight;
-            }
+            await nextTick();
+            scrollToBottom();
         } catch (error) {
             console.error(error);
             alert(error)
@@ -63,9 +55,8 @@
         }
 
         try {
-            const chatScroll = document.getElementById("chat-scroll");
-            const previousScrollHeight = chatScroll.scrollHeight;
-            const previousScrollTop = chatScroll.scrollTop;
+            const previousScrollHeight = chatScroll.value.scrollHeight;
+            const previousScrollTop = chatScroll.value.scrollTop;
 
             const newMessages = await axios.post(
                 route('chat::loadMessages', {chat: chat.value}),
@@ -73,16 +64,14 @@
             );
 
             if (typeof newMessages.data.messages === 'object') {
-                // Push the new message to the local array of messages
                 chat.value.messages.unshift(...newMessages.data.messages);
                 lastMessageId = newMessages.data.lastMessageId;
 
-                // Clear the new message input
                 newMessage.value = '';
 
                 await nextTick();
-                const newScrollHeight = chatScroll.scrollHeight;
-                chatScroll.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
+                const newScrollHeight = chatScroll.value.scrollHeight;
+                chatScroll.value.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
 
                 done('ok')
             } else {
@@ -98,9 +87,29 @@
     }
 
     onMounted(() => {
-        const chatScroll = document.getElementById("chat-scroll");
-        chatScroll.scrollTop = chatScroll.scrollHeight;
+        scrollToBottom();
+
+        chatScroll.value.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = chatScroll.value;
+            isAtBottom.value = scrollTop + clientHeight + 800 >= scrollHeight;
+        });
+
+        Echo.channel('message')
+            .listen('MessageSent', async (e) => {
+                chat.value.messages.push(e.message);
+                await nextTick();
+                scrollToBottom();
+            })
     })
+
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    }
+
+    const scrollToBottom = () => {
+        chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
+    }
 </script>
 
 <template>
@@ -110,9 +119,9 @@
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex">
-                    <div class="chat-window p-6 bg-pink-600 rounded-lg">
-                        <div class="content-container bg-blue-100 text-black" id="chat-scroll" ref="scrollContainer">
-                            <v-infinite-scroll @load="loadMessages" side="start">
+                    <div class="chat-window p-6 rounded-lg">
+                        <div class="content-container bg-blue-100 text-black rounded-lg chat-scroll" ref="chatScroll">
+                            <v-infinite-scroll v-if="chat.messages.length" @load="loadMessages" side="start">
                                 <div v-for="(message, index) in chat.messages" :key="index">
                                     <p
                                         class="m-4 p-4 rounded-lg"
@@ -123,17 +132,27 @@
                                         </span>
                                         {{ message.content }} <br>
                                         <span class="text-xs">
-                                            {{ message.sent_at }}
+                                            {{ formatDate(message.sent_at) }}
                                         </span>
                                     </p>
                                 </div>
+                                <div class="fixed-wrapper">
+                                    <v-btn v-if="!isAtBottom" @click="scrollToBottom" class="to-bottom-btn">
+                                        scroll to bottom 
+                                    </v-btn>
+                                </div>
                                 <template #empty></template>
                             </v-infinite-scroll>
+
+                            <div v-else class="empty-message-container">
+                                <p class="empty-message">
+                                    There are no messages in this chat yet. Why don't you start a conversation?
+                                </p>
+                            </div>
                         </div>
 
                         <div class="input-container flex mt-4">
                             <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg" @keyup.enter="sendMessage" />
-                            <v-btn @click="sendMessage" class="ml-2">send</v-btn>
                         </div>
                     </div>
                 </div>
@@ -157,5 +176,34 @@
     }
     .chat-input {
         width: 100%;
+    }
+    .chat-scroll {
+        position: relative;
+    }
+    .fixed-wrapper {
+        width: 220px;
+        position: absolute;
+        bottom: 3rem;
+        left: 0;
+        right: 0;
+        margin: auto;
+    }
+    .to-bottom-btn {
+        width: 220px;
+        position: fixed;
+        opacity: 0.8;
+    }
+    .to-bottom-btn:hover {
+        opacity: 1;
+    }
+    .empty-message-container {
+        height: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4rem;
+    }
+    .empty-message {
+        text-align: center;
     }
 </style>
