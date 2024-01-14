@@ -125,10 +125,10 @@
                                 <div v-for="(message, index) in chat.messages" :key="index">
                                     <p
                                         class="m-4 p-4 rounded-lg"
-                                        :class="message.user.id === user.id ? 'bg-blue-600 ml-20': 'bg-green-600 mr-20'"
+                                        :class="message.user_id === user.id ? 'bg-blue-600 ml-20': 'bg-green-600 mr-20'"
                                     >
                                         <span class="text-xs">
-                                            {{ message.user.name }}<br>
+                                            {{ message.user ? message.user.name : '[User deleted]' }}<br>
                                         </span>
                                         {{ message.content }} <br>
                                         <span class="text-xs">

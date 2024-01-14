@@ -55,4 +55,16 @@ class User extends Authenticatable
             'chat_id'
         );
     }
+
+    public function friends()
+    {
+        return $this->hasManyThrough(
+            User::class,
+            'user_friendships',
+            'user_one_id',
+            'id',
+            'id',
+            'user_two_id'
+        );
+    }
 }
