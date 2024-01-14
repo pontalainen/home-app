@@ -26,6 +26,7 @@
     const newMessage = ref('');
     let chatScroll = ref(null);
     let isAtBottom = ref(true);
+    let loading = ref(false);
 
     const sendMessage = async () => {
         if (newMessage.value === '') {
@@ -36,8 +37,8 @@
             const resp = await axios.post(route('chat::sendMessage', {chat: chat.value, user: user.value}), {
                 content: newMessage.value,
             });
-
             newMessage.value = '';
+            loading = false;
 
             await nextTick();
             scrollToBottom();
@@ -94,8 +95,9 @@
             isAtBottom.value = scrollTop + clientHeight + 800 >= scrollHeight;
         });
 
-        Echo.channel('message')
+        Echo.private('chat.' + chat.value.id)
             .listen('MessageSent', async (e) => {
+                console.log(e, 'asdasd');
                 chat.value.messages.push(e.message);
                 await nextTick();
                 scrollToBottom();
@@ -152,7 +154,8 @@
                         </div>
 
                         <div class="input-container flex mt-4">
-                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg" @keyup.enter="sendMessage" />
+                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg" :disabled="loading" @keyup.enter="loading = true; sendMessage();" />
+                            <v-progress-circular v-if="loading" indeterminate color="white ml-2"></v-progress-circular>
                         </div>
                     </div>
                 </div>

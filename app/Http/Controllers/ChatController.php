@@ -18,6 +18,7 @@ class ChatController extends Controller
         $this->middleware('auth');
 
         $chat = Chat::getChat();
+        $this->authorize('view', $chat);
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
@@ -29,6 +30,7 @@ class ChatController extends Controller
     public function loadMessages(Chat $chat, Request $request)
     {
         $this->middleware('auth');
+        $this->authorize('view', $chat);
 
         $messages = Message::loadMessages($chat, $request->lastMessageId);
         if ($messages->isEmpty()) {
@@ -45,9 +47,11 @@ class ChatController extends Controller
     public function sendMessage(Chat $chat, User $user, Request $request)
     {
         $this->middleware('auth');
+        $this->authorize('view', $chat);
+
         try {
             $newMessage = Message::sendMessage($chat, $user, $request->content);
-            event(new MessageSent($newMessage));
+            broadcast(new MessageSent($newMessage));
 
             return 'ok';
         } catch (Exception $e) {
