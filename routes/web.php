@@ -38,7 +38,7 @@ Route::name('profile::')->middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('destroy');
 });
 
-Route::name('chat::')->middleware('auth')->group(function () {
+Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
