@@ -29,7 +29,10 @@ const showingNavigationDropdown = ref(false);
 
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('chat::chat')" :active="route().current('chat')">
+                                <NavLink :href="route('friends::friends')" :active="route().current('friends::friends')">
+                                    Friends
+                                </NavLink>
+                                <NavLink :href="route('chat::chat')" :active="route().current('chat::chat')">
                                     Chat
                                 </NavLink>
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">

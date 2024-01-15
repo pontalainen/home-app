@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\FriendshipController;
 use App\Models\Chat;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,13 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
+});
+
+Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/friends', [FriendshipController::class, 'index'])->name('friends');
+
+    // Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
+    // Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
 });
 
 require __DIR__ . '/auth.php';
