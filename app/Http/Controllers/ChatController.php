@@ -13,10 +13,13 @@ use Inertia\Inertia;
 
 class ChatController extends Controller
 {
-    public function index()
+    public function __construct()
     {
         $this->middleware('auth');
+    }
 
+    public function index()
+    {
         $chat = Chat::getChat();
         $this->authorize('view', $chat);
 
@@ -29,7 +32,6 @@ class ChatController extends Controller
 
     public function loadMessages(Chat $chat, Request $request)
     {
-        $this->middleware('auth');
         $this->authorize('view', $chat);
 
         $messages = Message::loadMessages($chat, $request->lastMessageId);
@@ -46,7 +48,6 @@ class ChatController extends Controller
 
     public function sendMessage(Chat $chat, User $user, Request $request)
     {
-        $this->middleware('auth');
         $this->authorize('view', $chat);
 
         try {
