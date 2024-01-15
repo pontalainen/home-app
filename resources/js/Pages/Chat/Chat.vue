@@ -28,23 +28,29 @@
     let isAtBottom = ref(true);
     let loading = ref(false);
 
-    const sendMessage = async () => {
-        if (newMessage.value === '') {
+    // Regular function for immediate
+    const sendMessage = () => {
+        if (loading.value || newMessage.value === '') {
             return;
         }
 
+        loading.value = true;
+        saveMessage(newMessage.value);
+        newMessage.value = '';
+    }
+
+    const saveMessage = async (content) => {
         try {
             const resp = await axios.post(route('chat::sendMessage', {chat: chat.value, user: user.value}), {
-                content: newMessage.value,
+                content,
             });
-            newMessage.value = '';
-            loading = false;
-
             await nextTick();
             scrollToBottom();
         } catch (error) {
             console.error(error);
             alert(error)
+        } finally {
+            loading.value = false;
         }
     }
 
@@ -97,7 +103,6 @@
 
         Echo.private('chat.' + chat.value.id)
             .listen('MessageSent', async (e) => {
-                console.log(e, 'asdasd');
                 chat.value.messages.push(e.message);
                 await nextTick();
                 scrollToBottom();
@@ -154,7 +159,7 @@
                         </div>
 
                         <div class="input-container flex mt-4">
-                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg" :disabled="loading" @keyup.enter="loading = true; sendMessage();" />
+                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg" :disabled="loading" @keyup.enter="sendMessage" />
                             <v-progress-circular v-if="loading" indeterminate color="white ml-2"></v-progress-circular>
                         </div>
                     </div>
