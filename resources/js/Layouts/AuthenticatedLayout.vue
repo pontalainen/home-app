@@ -32,7 +32,7 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('chat::chat')" :active="route().current('chat::chat')">
                                     Chat
                                 </NavLink>
-                                <NavLink :href="route('friends::friends')" :active="route().current('friends::friends')">
+                                <NavLink :href="route('friends::discover')" :active="route().current('friends::discover')">
                                     Friends
                                 </NavLink>
                             </div>
