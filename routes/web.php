@@ -48,6 +48,7 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
 
 Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/friends', [FriendshipController::class, 'index'])->name('friends');
+    Route::post('/friends/toggle-friendship/{user}', [FriendshipController::class, 'toggleFriendship'])->name('toggleFriendship');
 
     // Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     // Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');

@@ -21,6 +21,11 @@ class FriendshipController extends Controller
         ]);
     }
 
+    public function toggleFriendship(User $user, Request $request)
+    {
+        dd($request->all(), $user);
+    }
+
     public function getUsers(User $user, Request $request)
     {
         dd('getUsers');
