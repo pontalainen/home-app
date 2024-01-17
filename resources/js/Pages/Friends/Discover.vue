@@ -20,7 +20,8 @@
         {
             id: 2,
             name: 'Lightning McQueen',
-            friends: [1, 3]
+            friends: [1, 3],
+            created_at: '2022-01-01 00:00:00'
         },
         {
             id: 3,
@@ -49,6 +50,12 @@
         await nextTick();
         userLoading.value[friend.id] = false;
     }
+    
+
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    }
 </script>
 <template>
     <Head title="Discover friends" />
@@ -65,10 +72,13 @@
                     <div class="p-6 rounded-lg">
                         <div v-for="(user, index) in users" :key="index" class="flex bg-white shadow-sm sm:rounded-lg p-3 my-8 justify-between">
                             <p>
-                                {{ user.name }}
+                                {{ user.name }} <br>
+                                <span class="text-xs">
+                                    <v-icon size="small" icon="mdi-calendar-clock" /> Member since: {{ formatDate(user.created_at) }}
+                                </span>
                             </p>
-                            <div class="user-buttons">
-                                <v-btn density="compact" color="" variant="text" :loading="userLoading[user.id]" @click="toggleUser(user, 'add')">
+                            <div class="user-buttons flex items-center">
+                                <v-btn density="compact" variant="text" size="regular" class="user-button" :loading="userLoading[user.id]" @click="toggleUser(user, 'add')">
                                     <template v-slot:default>
                                         <v-icon icon="mdi-plus" />
                                     </template>
@@ -76,6 +86,26 @@
                                         <v-progress-linear indeterminate></v-progress-linear>
                                     </template>
                                 </v-btn>
+                                <v-menu location="top">
+                                    <template v-slot:activator="{ props }">
+                                        <v-btn
+                                            color="primary"
+                                            dark
+                                            v-bind="props"
+                                        >
+                                            Dropdown
+                                        </v-btn>
+                                    </template>
+
+                                    <v-list>
+                                        <v-list-item
+                                        v-for="(item, index) in items"
+                                        :key="index"
+                                        >
+                                        <v-list-item-title>{{ item.title }}</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
                             </div>
                         </div>
                     </div>
@@ -90,5 +120,9 @@
         max-width: 50%;
         width: 50vw;
         margin: 2em auto;
+    }
+    .user-button {
+        padding: 0 !important;
+        min-width: 1rem !important;
     }
 </style>
