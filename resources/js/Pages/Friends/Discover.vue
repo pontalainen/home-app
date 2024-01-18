@@ -22,6 +22,9 @@
     const hasSearched = ref(false);
 
     const search = () => {
+        if (!searchInput.value.length) {
+            return;
+        }
         searchLoading.value = true;
         getUsers();
     }
