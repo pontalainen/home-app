@@ -50,12 +50,13 @@
         await nextTick();
         userLoading.value[friend.id] = false;
     }
-    
 
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString(undefined, options);
     }
+
+    const userOptions = ['View profile', 'Block user']
 </script>
 <template>
     <Head title="Discover friends" />
@@ -89,20 +90,26 @@
                                 <v-menu location="top">
                                     <template v-slot:activator="{ props }">
                                         <v-btn
-                                            color="primary"
-                                            dark
+                                            density="compact"
+                                            variant="text"
+                                            size="regular"
+                                            class="user-button"
                                             v-bind="props"
                                         >
-                                            Dropdown
+                                            <v-icon icon="mdi-dots-horizontal"></v-icon>
                                         </v-btn>
                                     </template>
 
-                                    <v-list>
+                                    <v-list width="150">
                                         <v-list-item
-                                        v-for="(item, index) in items"
-                                        :key="index"
+                                            v-for="(option, index) in userOptions"
+                                            :key="index"
                                         >
-                                        <v-list-item-title>{{ item.title }}</v-list-item-title>
+                                            <v-list-item-title @click="console.log('tja')">
+                                                <v-btn variant="text">
+                                                    {{ option }}
+                                                </v-btn>
+                                            </v-list-item-title>
                                         </v-list-item>
                                     </v-list>
                                 </v-menu>
@@ -124,5 +131,6 @@
     .user-button {
         padding: 0 !important;
         min-width: 1rem !important;
+        margin: 0.5rem;
     }
 </style>

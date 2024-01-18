@@ -23,7 +23,10 @@ class FriendshipController extends Controller
 
     public function toggleFriendship(User $user, Request $request)
     {
+        User::first()->friends()->attach(User::find(2));
         dd($request->all(), $user);
+
+
     }
 
     public function getUsers(User $user, Request $request)
