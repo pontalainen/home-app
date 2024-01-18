@@ -28,7 +28,7 @@
     let isAtBottom = ref(true);
     let loading = ref(false);
 
-    // Regular function for immediate
+    // Regular function for immediate response
     const sendMessage = () => {
         if (loading.value || newMessage.value === '') {
             return;

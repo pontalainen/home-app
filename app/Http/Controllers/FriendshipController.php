@@ -23,14 +23,15 @@ class FriendshipController extends Controller
 
     public function toggleFriendship(User $user, Request $request)
     {
-        User::first()->friends()->attach(User::find(2));
-        dd($request->all(), $user);
-
-
+        if ($request->type === 'add') {
+            return Auth::user()->addFriend($user);
+        } else {
+            return Auth::user()->removeFriend($user);
+        }
     }
 
-    public function getUsers(User $user, Request $request)
+    public function getUsers(Request $request)
     {
-        dd('getUsers');
+        return User::getDiscoveryUsers($request->search);
     }
 }
