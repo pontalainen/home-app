@@ -20,14 +20,28 @@ class ChatController extends Controller
 
     public function index()
     {
-        $chat = Chat::getChat();
-        $this->authorize('view', $chat);
+        $chat = Auth::user()
+            ->chats()
+            ->with('messages')
+            ->first();
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
             'chat' => $chat,
-            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
+    }
+
+    public function checkChat(Request $request)
+    {
+        if ($request->has('chatId')) {
+            $chat = Chat::find($request->chatId);
+        } else {
+            $chat = Chat::createChat($request->user);
+        }
+
+        $this->authorize('view', $chat);
+
+        return $chat->id;
     }
 
     public function loadMessages(Chat $chat, Request $request)

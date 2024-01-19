@@ -11,8 +11,19 @@ class Chat extends Model
 {
     use HasFactory;
 
+    public static function createChat($userId)
+    {
+        $chat = self::create();
+        $chat->users()->attach(auth()->user()->id);
+        $chat->users()->attach($userId);
+
+        return $chat;
+    }
+
     public static function getChat()
     {
+
+
         return self::with(['users', 'messages' => function ($q) {
             $messages = $q->with('user')->latest()->take(25)->get();
             return $messages->reverse();
