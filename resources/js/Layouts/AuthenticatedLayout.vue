@@ -52,7 +52,7 @@ const switchChat = (chat) => {
 
                                 <!-- Navigation Links -->
                                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                    <NavLink :href="route('chat::chat')" :active="route().current('chat::chat')">
+                                    <NavLink :href="route('chat::index')" :active="route().current('chat::index')">
                                         Chat
                                     </NavLink>
                                     <NavLink :href="route('friends::discover')"
@@ -126,7 +126,7 @@ const switchChat = (chat) => {
 
                         <v-divider :thickness="2" class="my-2 mt-4"></v-divider>
 
-                        <ResponsiveNavLink :href="route('chat::chat')" :active="route().current('chat::chat')">
+                        <ResponsiveNavLink :href="route('chat::index')" :active="route().current('chat::index')">
                             Chat
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('friends::discover')"

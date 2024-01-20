@@ -20,14 +20,25 @@ class ChatController extends Controller
 
     public function index()
     {
-        $chat = Auth::user()
-            ->chats()
-            ->with('messages')
-            ->first();
+        $chat = Auth::user()->chats()->first();
+        $chat->loadChat();
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
             'chat' => $chat,
+            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+        ]);
+    }
+
+    public function chat(Chat $chat)
+    {
+        $this->authorize('view', $chat);
+        $chat->loadChat();
+
+        return Inertia::render('Chat/Chat', [
+            'user' => Auth::user(),
+            'chat' => $chat,
+            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
     }
 
@@ -44,7 +55,7 @@ class ChatController extends Controller
         }
 
         $this->authorize('view', $chat);
-        return $chat->id;
+        return $chat;
     }
 
     public function loadMessages(Chat $chat, Request $request)

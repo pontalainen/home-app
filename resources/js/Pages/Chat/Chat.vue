@@ -22,8 +22,9 @@ const props = defineProps({
     }
 })
 const { user, chat } = toRefs(props);
-// let { lastMessageId } = toRefs(props);
-// chat.value.messages = chat.value.messages.reverse();
+console.log(chat.value)
+let { lastMessageId } = toRefs(props);
+chat.value.messages = chat.value.messages.reverse();
 
 const newMessage = ref('');
 let chatScroll = ref(null);

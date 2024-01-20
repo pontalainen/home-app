@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Message;
+use Auth;
 
 class Chat extends Model
 {
@@ -20,14 +21,12 @@ class Chat extends Model
         return $chat;
     }
 
-    public static function getChat()
+    public function loadChat()
     {
-
-
-        return self::with(['users', 'messages' => function ($q) {
+        $this->load(['users', 'messages' => function ($q) {
             $messages = $q->with('user')->latest()->take(25)->get();
             return $messages->reverse();
-        }])->first();
+        }]);
     }
 
     public function users()
