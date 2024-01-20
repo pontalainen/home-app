@@ -37,8 +37,8 @@ class ChatController extends Controller
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
-            'chat' => $chat,
-            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+            'chatProp' => $chat,
+            'lastMessageIdProp' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
     }
 
@@ -56,6 +56,36 @@ class ChatController extends Controller
 
         $this->authorize('view', $chat);
         return $chat;
+    }
+
+    public function getChat(Chat $chat)
+    {
+        $this->authorize('view', $chat);
+        $chat->loadChat();
+        $chat->otherUser = $chat->users->where('id', '!=', Auth::id())->first();
+
+        return response()->json([
+            'chat' => $chat,
+            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+        ]);
+    }
+
+    public function getChats()
+    {
+        $chats = Auth::user()->chats()
+            ->with(['users', 'latestMessage', 'latestMessage.user'])
+            ->limit(25)
+            ->get()
+            ->sortByDesc(function ($chat) {
+                return $chat->latestMessage->created_at;
+            });
+        $chats = $chats->map(function ($chat) {
+            $chat->otherUser = $chat->users->where('id', '!=', Auth::id())->first();
+            return $chat;
+        });
+
+        // Converted to array to keep order
+        return response()->json($chats->values()->all());
     }
 
     public function loadMessages(Chat $chat, Request $request)

@@ -2,34 +2,37 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toRefs, ref, onMounted, nextTick } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import axios from 'axios';
 
-const Echo = window.Echo;
+const { Echo } = window;
 
 const props = defineProps({
     user: {
         type: Object,
         required: true,
     },
-    chat: {
+    chatProp: {
         type: Object,
         required: false,
         default: () => ({}),
     },
-    lastMessageId: {
+    lastMessageIdProp: {
         type: Number,
         required: false,
         default: 1,
-    }
-})
-const { user, chat } = toRefs(props);
-let { lastMessageId } = toRefs(props);
+    },
+});
+const { user, chatProp, lastMessageIdProp } = toRefs(props);
+
+const chat = ref(chatProp.value);
+const lastMessageId = ref(lastMessageIdProp.value);
 chat.value.messages = chat.value.messages.reverse();
 
 const newMessage = ref('');
-let chatScroll = ref(null);
-let chatInput = ref(null);
-let isAtBottom = ref(true);
-let loading = ref(false);
+const chatScroll = ref(null);
+const chatInput = ref(null);
+const isAtBottom = ref(true);
+const loading = ref(false);
 
 // Regular function for immediate response
 const sendMessage = () => {
@@ -40,7 +43,7 @@ const sendMessage = () => {
     loading.value = true;
     saveMessage(newMessage.value);
     newMessage.value = '';
-}
+};
 
 const saveMessage = async (content) => {
     try {
@@ -51,11 +54,10 @@ const saveMessage = async (content) => {
         scrollToBottom();
     } catch (error) {
         console.error(error);
-        alert(error)
     } finally {
         loading.value = false;
     }
-}
+};
 
 let noMoreMessages = false;
 const loadMessages = async ({ done }) => {
@@ -68,14 +70,13 @@ const loadMessages = async ({ done }) => {
         const previousScrollHeight = chatScroll.value.scrollHeight;
         const previousScrollTop = chatScroll.value.scrollTop;
 
-        const newMessages = await axios.post(
-            route('chat::loadMessages', { chat: chat.value }),
-            { lastMessageId: lastMessageId.value }
-        );
+        const newMessages = await axios.post(route('chat::loadMessages', { chat: chat.value }), {
+            lastMessageId: lastMessageId.value,
+        });
 
         if (typeof newMessages.data.messages === 'object') {
             chat.value.messages.unshift(...newMessages.data.messages);
-            lastMessageId = newMessages.data.lastMessageId;
+            lastMessageId.value = newMessages.data.lastMessageId;
 
             newMessage.value = '';
 
@@ -83,18 +84,16 @@ const loadMessages = async ({ done }) => {
             const newScrollHeight = chatScroll.value.scrollHeight;
             chatScroll.value.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
 
-            done('ok')
+            done('ok');
         } else {
             noMoreMessages = true;
-            done('empty')
+            done('empty');
         }
-
     } catch (error) {
         console.error(error);
-        alert(error)
-        done('error')
+        done('error');
     }
-}
+};
 
 onMounted(() => {
     if (chat.value) {
@@ -104,87 +103,134 @@ onMounted(() => {
         });
         scrollToBottom();
 
-        Echo.private('chat.' + chat.value.id)
-            .listen('MessageSent', async (e) => {
-                chat.value.messages.push(e.message);
-                await nextTick();
-                scrollToBottom();
-            })
+        Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
+            chat.value.messages.push(e.message);
+            await nextTick();
+            scrollToBottom();
+        });
     }
-})
+});
 
 const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    };
     return new Date(dateString).toLocaleDateString(undefined, options);
-}
+};
 
 const scrollToBottom = () => {
     chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
-}
+};
+
+const getChat = async (newChat) => {
+    try {
+        const resp = await axios.get(route('chat::getChat', { chat: newChat }));
+        chat.value = resp.data.chat;
+        chat.value.messages = chat.value.messages.reverse();
+        lastMessageId.value = resp.data.lastMessageId;
+    } catch (error) {
+        console.error(error);
+    } finally {
+        // eslint-disable-next-line no-restricted-globals
+        history.pushState({}, '', `/chat/${newChat}`);
+        await nextTick();
+        scrollToBottom();
+    }
+};
 
 const switchChat = (newChat) => {
-    console.log('Mottaget!', newChat)
-    // chat.value = newChat;
-    // lastMessageId.value = 1;
-    // noMoreMessages = false;
-    // scrollToBottom();
-}
+    getChat(newChat);
+};
 
+const otherUser = () => {
+    return chat.value.users.find((u) => u.id !== user.value.id);
+};
 </script>
 
 <template>
-    <Head title="Chat" />
+    <div>
+        <Head title="Chat" />
 
-    <AuthenticatedLayout @switch-chat="switchChat">
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex">
-                    <div v-if="chat" class="chat-window p-6 rounded-lg">
-                        <div class="content-container bg-blue-100 text-black rounded-lg chat-scroll" ref="chatScroll">
-                            <v-infinite-scroll v-if="chat.messages.length" @load="loadMessages" side="start">
-                                <div v-for="(message, index) in chat.messages" :key="index" class="m-4">
-                                    <p class="p-4 rounded-lg message"
-                                        :class="message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'">
-                                        <span class="text-xs">
-                                            {{ message.user ? message.user.name : '[User deleted]' }}<br>
-                                        </span>
-                                        {{ message.content }} <br>
-                                        <span class="text-xs">
-                                            {{ formatDate(message.sent_at) }}
-                                        </span>
+        <AuthenticatedLayout :current-chat="chat" @switch-chat="switchChat">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex">
+                        <div v-if="chat" class="chat-window p-6 rounded-lg">
+                            <div class="flex justify-center -mt-8 mb-4">
+                                <p class="text-blue-100 font-bold text-xl">
+                                    <span v-if="chat.users.length > 2">
+                                        {{ chat.name }}
+                                    </span>
+                                    <span v-else>
+                                        {{ otherUser().name }}
+                                    </span>
+                                </p>
+                            </div>
+
+                            <div
+                                ref="chatScroll"
+                                class="content-container bg-blue-100 text-black rounded-lg chat-scroll"
+                            >
+                                <v-infinite-scroll v-if="chat.messages.length" side="start" @load="loadMessages">
+                                    <div v-for="(message, index) in chat.messages" :key="index" class="m-4">
+                                        <p
+                                            class="p-4 rounded-lg message break-all flex flex-col"
+                                            :class="
+                                                message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'
+                                            "
+                                        >
+                                            <span v-if="chat.users.length > 2" class="text-xs mb-1">
+                                                {{ message.user ? message.user.name : '[User deleted]' }}<br />
+                                            </span>
+                                            <span> {{ message.content }} <br /> </span>
+                                            <span class="text-xs mt-4">
+                                                {{ formatDate(message.sent_at) }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="fixed-wrapper">
+                                        <v-btn v-if="!isAtBottom" class="to-bottom-btn" @click="scrollToBottom">
+                                            scroll to bottom
+                                        </v-btn>
+                                    </div>
+                                    <template #empty></template>
+                                </v-infinite-scroll>
+
+                                <div v-else class="empty-message-container">
+                                    <p class="empty-message">
+                                        There are no messages in this chat yet. Why don't you start a conversation?
                                     </p>
                                 </div>
-                                <div class="fixed-wrapper">
-                                    <v-btn v-if="!isAtBottom" @click="scrollToBottom" class="to-bottom-btn">
-                                        scroll to bottom
-                                    </v-btn>
-                                </div>
-                                <template #empty></template>
-                            </v-infinite-scroll>
+                            </div>
 
-                            <div v-else class="empty-message-container">
-                                <p class="empty-message">
-                                    There are no messages in this chat yet. Why don't you start a conversation?
-                                </p>
+                            <div class="input-container flex mt-4">
+                                <input
+                                    ref="chatInput"
+                                    v-model="newMessage"
+                                    placeholder="Chat..."
+                                    class="chat-input bg-blue-100 rounded-lg"
+                                    @keyup.enter="sendMessage"
+                                />
+                                <v-progress-circular
+                                    v-if="loading"
+                                    indeterminate
+                                    color="white ml-2"
+                                ></v-progress-circular>
                             </div>
                         </div>
 
-                        <div class="input-container flex mt-4">
-                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-blue-100 rounded-lg"
-                                @keyup.enter="sendMessage" ref="chatInput" />
-                            <v-progress-circular v-if="loading" indeterminate color="white ml-2"></v-progress-circular>
+                        <div v-else class="start-chat-container w-full">
+                            <p class="text-gray-300">Start a chat with someone!</p>
                         </div>
-                    </div>
-
-                    <div v-else class="start-chat-container w-full">
-                        <p class="text-gray-300">
-                            Start a chat with someone!
-                        </p>
                     </div>
                 </div>
             </div>
-        </div>
-    </AuthenticatedLayout>
+        </AuthenticatedLayout>
+    </div>
 </template>
 <style>
 .chat-container {

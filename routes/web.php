@@ -41,11 +41,11 @@ Route::name('profile::')->middleware(['auth', 'verified'])->group(function () {
 
 Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('index');
-    Route::get('/chat/{chat}', [ChatController::class, 'chat'])->name('chat');
+    Route::get('/chat/get-chats', [ChatController::class, 'getChats'])->name('getChats');
+    Route::get('/chat/get-chat/{chat}', [ChatController::class, 'getChat'])->name('getChat');
 
+    Route::get('/chat/{chat}', [ChatController::class, 'chat'])->name('chat');
     Route::post('/chat/check-chat', [ChatController::class, 'checkChat'])->name('checkChat');
-    Route::post('/chat/get-chat', [ChatController::class, 'getChat'])->name('getChat');
-    Route::post('/chat/quick-chats', [ChatController::class, 'quickChats'])->name('quickChats');
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
