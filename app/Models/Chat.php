@@ -14,8 +14,8 @@ class Chat extends Model
     public static function createChat($userId)
     {
         $chat = self::create();
-        $chat->users()->attach(auth()->user()->id);
-        $chat->users()->attach($userId);
+        $chat->users()->attach(auth()->user()->id, ['joined_at' => now()]);
+        $chat->users()->attach($userId, ['joined_at' => now()]);
 
         return $chat;
     }

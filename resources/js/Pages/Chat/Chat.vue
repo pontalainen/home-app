@@ -142,7 +142,7 @@ const switchChat = (newChat) => {
                         <div class="content-container bg-blue-100 text-black rounded-lg chat-scroll" ref="chatScroll">
                             <v-infinite-scroll v-if="chat.messages.length" @load="loadMessages" side="start">
                                 <div v-for="(message, index) in chat.messages" :key="index">
-                                    <p class="m-4 p-4 rounded-lg"
+                                    <p class="m-4 p-4 rounded-lg message"
                                         :class="message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'">
                                         <span class="text-xs">
                                             {{ message.user ? message.user.name : '[User deleted]' }}<br>
@@ -169,7 +169,7 @@ const switchChat = (newChat) => {
                         </div>
 
                         <div class="input-container flex mt-4">
-                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-white rounded-lg"
+                            <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-blue-100 rounded-lg"
                                 :disabled="loading" @keyup.enter="sendMessage" />
                             <v-progress-circular v-if="loading" indeterminate color="white ml-2"></v-progress-circular>
                         </div>
@@ -249,8 +249,7 @@ const switchChat = (newChat) => {
     text-align: center;
 }
 
-.app-bar {
-    position: relative !important;
-    max-height: 4rem !important;
+.message {
+    box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.6);
 }
 </style>

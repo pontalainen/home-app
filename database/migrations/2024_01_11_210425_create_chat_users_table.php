@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('user_id');
 
             $table->timestamp('joined_at');
-            $table->timestamp('left_at');
+            $table->timestamp('left_at')->nullable();
         });
     }
 

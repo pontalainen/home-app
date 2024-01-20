@@ -70,8 +70,9 @@ const areFriends = (u) => {
 
 const openChat = async (u) => {
     try {
-        const chat = await axios.post(route('chat::checkChat'), { user: u });
-        window.location.href = route('chat::chat', { chat });
+        const chat = await axios.post(route('chat::checkChat'), { user: u.id });
+        console.log(chat);
+        // window.location.href = route('chat::chat', { chat });
     } catch (error) {
         console.error(error);
     }
