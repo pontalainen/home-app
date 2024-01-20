@@ -84,8 +84,8 @@ const openChat = async (u) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 discovery-container">
                 <div class="search-container flex">
-                    <input placeholder="Search for user..." v-model="searchInput" :disabled="searchLoading"
-                        @keyup.enter="search" class="bg-white rounded-lg w-full mb-4" />
+                    <input placeholder="Search for user..." v-model="searchInput" @keyup.enter="search"
+                        class="bg-white rounded-lg w-full mb-4" />
                     <v-progress-circular v-if="searchLoading" indeterminate color="white ml-2"></v-progress-circular>
                 </div>
 

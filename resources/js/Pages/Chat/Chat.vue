@@ -22,12 +22,12 @@ const props = defineProps({
     }
 })
 const { user, chat } = toRefs(props);
-console.log(chat.value)
 let { lastMessageId } = toRefs(props);
 chat.value.messages = chat.value.messages.reverse();
 
 const newMessage = ref('');
 let chatScroll = ref(null);
+let chatInput = ref(null);
 let isAtBottom = ref(true);
 let loading = ref(false);
 
@@ -142,8 +142,8 @@ const switchChat = (newChat) => {
                     <div v-if="chat" class="chat-window p-6 rounded-lg">
                         <div class="content-container bg-blue-100 text-black rounded-lg chat-scroll" ref="chatScroll">
                             <v-infinite-scroll v-if="chat.messages.length" @load="loadMessages" side="start">
-                                <div v-for="(message, index) in chat.messages" :key="index">
-                                    <p class="m-4 p-4 rounded-lg message"
+                                <div v-for="(message, index) in chat.messages" :key="index" class="m-4">
+                                    <p class="p-4 rounded-lg message"
                                         :class="message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'">
                                         <span class="text-xs">
                                             {{ message.user ? message.user.name : '[User deleted]' }}<br>
@@ -171,7 +171,7 @@ const switchChat = (newChat) => {
 
                         <div class="input-container flex mt-4">
                             <input placeholder="Chat..." v-model="newMessage" class="chat-input bg-blue-100 rounded-lg"
-                                :disabled="loading" @keyup.enter="sendMessage" />
+                                @keyup.enter="sendMessage" ref="chatInput" />
                             <v-progress-circular v-if="loading" indeterminate color="white ml-2"></v-progress-circular>
                         </div>
                     </div>
