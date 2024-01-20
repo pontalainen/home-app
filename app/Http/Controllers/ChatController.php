@@ -33,14 +33,17 @@ class ChatController extends Controller
 
     public function checkChat(Request $request)
     {
-        if ($request->has('chatId')) {
-            $chat = Chat::find($request->chatId);
-        } else {
+        $chat = Chat::whereHas('users', function ($q) use ($request) {
+            $q->where('user_id', $request->user);
+        })->whereHas('users', function ($q) {
+            $q->where('user_id', Auth::id());
+        })->first();
+
+        if (!$chat) {
             $chat = Chat::createChat($request->user);
         }
 
         $this->authorize('view', $chat);
-
         return $chat->id;
     }
 
