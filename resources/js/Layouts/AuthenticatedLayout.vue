@@ -130,10 +130,11 @@ watch(drawer, (newVal) => {
                             :items="chats"
                             :title="chat.users.length > 2 ? chat.name : chat.otherUser.name"
                             link
+                            class="py-2 my-2 min-h-16"
                             :class="{ 'active-chat': chat.id === currentChat.id }"
                             @click="switchChat(chat.id)"
                         >
-                            <p class="text-xs overflow-hidden text-ellipsis quick-text">
+                            <p class="text-xs overflow-hidden text-ellipsis mt-2 quick-text">
                                 <span class="font-bold"> {{ chat.latest_message.user.name }}: </span>
                                 <span>{{ chat.latest_message.content }}</span>
                             </p>
@@ -208,6 +209,7 @@ watch(drawer, (newVal) => {
 
 .nav-drawer {
     position: absolute !important;
+    width: 300px !important;
 }
 
 .hamburger {
@@ -222,5 +224,8 @@ watch(drawer, (newVal) => {
     -webkit-line-clamp: 2; /* number of lines to show */
     line-clamp: 2;
     -webkit-box-orient: vertical;
+}
+.v-list-item__content {
+    min-height: 64px;
 }
 </style>
