@@ -131,11 +131,14 @@ watch(drawer, (newVal) => {
                             :title="chat.users.length > 2 ? chat.name : chat.otherUser.name"
                             link
                             class="py-2 my-2 min-h-16"
-                            :class="{ 'active-chat': chat.id === currentChat.id }"
+                            :class="{ 'active-chat': currentChat && chat.id === currentChat.id }"
                             @click="switchChat(chat.id)"
                         >
-                            <p class="text-xs overflow-hidden text-ellipsis mt-2 quick-text">
-                                <span class="font-bold"> {{ chat.latest_message.user.name }}: </span>
+                            <p v-if="chat.latest_message" class="text-xs overflow-hidden text-ellipsis mt-2 quick-text">
+                                <span v-if="chat.latest_message.user.id === $page.props.auth.user.id" class="font-bold">
+                                    You:
+                                </span>
+                                <span v-else class="font-bold"> {{ chat.latest_message.user.name }}: </span>
                                 <span>{{ chat.latest_message.content }}</span>
                             </p>
                         </v-list-item>

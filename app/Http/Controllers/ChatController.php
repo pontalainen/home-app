@@ -77,8 +77,13 @@ class ChatController extends Controller
             ->limit(25)
             ->get()
             ->sortByDesc(function ($chat) {
-                return $chat->latestMessage->created_at;
+                if ($chat->lastMessage) {
+                    return $chat->latestMessage->created_at;
+                } else {
+                    return $chat->created_at;
+                }
             });
+
         $chats = $chats->map(function ($chat) {
             $chat->otherUser = $chat->users->where('id', '!=', Auth::id())->first();
             return $chat;

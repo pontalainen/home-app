@@ -14,7 +14,7 @@ const props = defineProps({
     chatProp: {
         type: Object,
         required: false,
-        default: () => ({}),
+        default: null,
     },
     lastMessageIdProp: {
         type: Number,
@@ -26,7 +26,9 @@ const { user, chatProp, lastMessageIdProp } = toRefs(props);
 
 const chat = ref(chatProp.value);
 const lastMessageId = ref(lastMessageIdProp.value);
-chat.value.messages = chat.value.messages.reverse();
+if (chat.value) {
+    chat.value.messages = chat.value.messages.reverse();
+}
 
 const newMessage = ref('');
 const chatScroll = ref(null);
