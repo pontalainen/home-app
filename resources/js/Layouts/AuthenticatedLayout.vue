@@ -16,9 +16,14 @@ const props = defineProps({
         required: false,
         default: () => ({}),
     },
+    openDrawer: {
+        type: Boolean,
+        required: false,
+        default: false,
+    },
 });
 
-const { currentChat } = toRefs(props);
+const { currentChat, openDrawer } = toRefs(props);
 
 const emit = defineEmits(['switch-chat']);
 const switchChat = (newChat) => {
@@ -35,6 +40,10 @@ onMounted(() => {
     getChats();
 });
 
+watch(openDrawer, () => {
+    drawer.value = true;
+});
+
 watch(drawer, (newVal) => {
     if (newVal === true) {
         getChats();
@@ -44,6 +53,7 @@ watch(drawer, (newVal) => {
 
 <template>
     <!-- eslint-disable max-len -->
+    <!-- eslint-disable vue/html-indent -->
     <v-app>
         <div>
             <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -61,12 +71,18 @@ watch(drawer, (newVal) => {
 
                                 <!-- Navigation Links -->
                                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                    <NavLink :href="route('chat::index')" :active="route().current('chat::index')">
+                                    <NavLink
+                                        :href="route('chat::index')"
+                                        :active="route().current('chat::index') || route().current('chat::chat')"
+                                    >
                                         Chat
                                     </NavLink>
                                     <NavLink
                                         :href="route('friends::discover')"
-                                        :active="route().current('friends::discover')"
+                                        :active="
+                                            route().current('friends::discover') ||
+                                            route().current('friends::myFriends')
+                                        "
                                     >
                                         Friends
                                     </NavLink>
@@ -130,7 +146,7 @@ watch(drawer, (newVal) => {
                             :items="chats"
                             :title="chat.users.length > 2 ? chat.name : chat.otherUser.name"
                             link
-                            class="py-2 my-2 min-h-16"
+                            class="py-2 my-2"
                             :class="{ 'active-chat': currentChat && chat.id === currentChat.id }"
                             @click="switchChat(chat.id)"
                         >
@@ -141,6 +157,16 @@ watch(drawer, (newVal) => {
                                 <span v-else class="font-bold"> {{ chat.latest_message.user.name }}: </span>
                                 <span>{{ chat.latest_message.content }}</span>
                             </p>
+                            <p v-else>
+                                <span class="text-xs overflow-hidden text-ellipsis mt-2 quick-text font-italic">
+                                    Say hello to {{ chat.otherUser.name }}!
+                                </span>
+                            </p>
+                            <v-divider
+                                :thickness="2"
+                                class="my-2 mt-4 border-opacity-100"
+                                :class="{ 'blue-divider': currentChat && chat.id !== currentChat.id }"
+                            ></v-divider>
                         </v-list-item>
                     </v-list>
                 </v-navigation-drawer>
@@ -230,5 +256,11 @@ watch(drawer, (newVal) => {
 }
 .v-list-item__content {
     min-height: 64px;
+}
+.v-list-item-title {
+    font-weight: bold;
+}
+.blue-divider {
+    border-color: rgb(66, 126, 255) !important;
 }
 </style>

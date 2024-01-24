@@ -35,6 +35,7 @@ const chatScroll = ref(null);
 const chatInput = ref(null);
 const isAtBottom = ref(true);
 const loading = ref(false);
+const drawer = ref(false);
 
 // Regular function for immediate response
 const sendMessage = () => {
@@ -157,7 +158,7 @@ const otherUser = () => {
     <div>
         <Head title="Chat" />
 
-        <AuthenticatedLayout :current-chat="chat" @switch-chat="switchChat">
+        <AuthenticatedLayout :current-chat="chat" :open-drawer="drawer" @switch-chat="switchChat">
             <div class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex">
@@ -225,8 +226,11 @@ const otherUser = () => {
                             </div>
                         </div>
 
-                        <div v-else class="start-chat-container w-full">
-                            <p class="text-gray-300">Start a chat with someone!</p>
+                        <div v-else class="start-chat-container w-full flex flex-col">
+                            <p class="text-gray-300 my-2">Start a chat with someone!</p>
+                            <v-btn compact variant="text" class="my-2 see-chats" @click="drawer = !drawer">
+                                See chats
+                            </v-btn>
                         </div>
                     </div>
                 </div>
@@ -235,6 +239,10 @@ const otherUser = () => {
     </div>
 </template>
 <style>
+.see-chats {
+    color: rgb(209 213 219);
+    text-decoration: underline;
+}
 .chat-container {
     height: 80vh;
 }

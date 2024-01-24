@@ -1,6 +1,7 @@
+<!-- eslint-disable no-restricted-globals -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { toRefs, ref, nextTick } from 'vue';
+import { toRefs, ref, nextTick, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -9,9 +10,13 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    modeProp: {
+        type: String,
+        required: true,
+    },
 });
 
-const { user } = toRefs(props);
+const { user, modeProp } = toRefs(props);
 
 const users = ref([]);
 const userLoading = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
@@ -20,6 +25,7 @@ const userHover = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false })
 const searchInput = ref('');
 const searchLoading = ref(false);
 const hasSearched = ref(false);
+const mode = ref(modeProp.value);
 
 const search = () => {
     if (!searchInput.value.length) {
@@ -73,19 +79,35 @@ const openChat = async (u) => {
         console.error(error);
     }
 };
+
+const isDiscoverMode = computed({
+    get: () => mode.value === 'discover',
+    set: (newValue) => {
+        if (newValue) {
+            mode.value = 'discover';
+            history.pushState({}, '', '/friends/discover');
+        } else {
+            mode.value = 'myFriends';
+            history.pushState({}, '', '/friends/my-friends');
+        }
+    },
+});
 </script>
 <template>
     <div>
-        <Head title="Discover friends" />
+        <Head v-if="mode === 'discover'" title="Discover friends" />
+        <Head v-else title="My friends" />
 
         <AuthenticatedLayout>
+            <v-switch v-model="isDiscoverMode" hide-details inset label="Discover mode"></v-switch>
+
             <div class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 discovery-container">
                     <div class="search-container flex">
                         <input
                             v-model="searchInput"
                             placeholder="Search for user..."
-                            class="bg-white rounded-lg w-full mb-4"
+                            class="bg-blue-100 rounded-lg w-full mb-4"
                             @keyup.enter="search"
                         />
                         <v-progress-circular
@@ -203,5 +225,17 @@ const openChat = async (u) => {
     padding: 0 !important;
     min-width: 1rem !important;
     margin: 0.5rem;
+}
+
+.v-selection-control {
+    position: absolute;
+    top: 5rem;
+    right: 4rem;
+}
+
+.v-selection-control .v-label {
+    color: rgb(219 234 254);
+    opacity: 1;
+    font-weight: bold;
 }
 </style>
