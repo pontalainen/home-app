@@ -55,7 +55,9 @@ Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/friends', [FriendshipController::class, 'index'])->name('discover');
     Route::get('/friends/discover', [FriendshipController::class, 'index'])->name('discover');
     Route::get('/friends/my-friends', [FriendshipController::class, 'myFriends'])->name('myFriends');
+
     Route::post('/friends/get-users', [FriendshipController::class, 'getUsers'])->name('getUsers');
+    Route::post('/friends/get-friends', [FriendshipController::class, 'getFriends'])->name('getFriends');
 
     Route::post('/friends/toggle-friendship/{user}', [FriendshipController::class, 'toggleFriendship'])->name('toggleFriendship');
 });

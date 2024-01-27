@@ -1,7 +1,7 @@
 <!-- eslint-disable no-restricted-globals -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { toRefs, ref, nextTick, computed } from 'vue';
+import { toRefs, ref, nextTick, computed, onMounted } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -19,6 +19,8 @@ const props = defineProps({
 const { user, modeProp } = toRefs(props);
 
 const users = ref([]);
+const discoveryUsers = ref([]);
+const friends = ref([]);
 const userLoading = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
 const userHover = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
 
@@ -32,16 +34,31 @@ const search = () => {
         return;
     }
     searchLoading.value = true;
+    hasSearched.value = true;
+    getUsers();
+};
+
+const refresh = () => {
+    searchLoading.value = true;
     getUsers();
 };
 
 const getUsers = async () => {
-    const resp = await axios.post(route('friends::getUsers'), { search: searchInput.value });
+    users.value = isDiscoverMode.value ? discoveryUsers.value : friends.value;
+
+    const resp = isDiscoverMode.value
+        ? await axios.post(route('friends::getUsers'), { search: searchInput.value })
+        : await axios.post(route('friends::getFriends'));
     users.value = resp.data;
 
     await nextTick();
     searchLoading.value = false;
-    hasSearched.value = true;
+
+    if (isDiscoverMode.value) {
+        discoveryUsers.value = users.value;
+    } else {
+        friends.value = users.value;
+    }
 };
 
 const toggleUser = (u) => {
@@ -80,8 +97,14 @@ const openChat = async (u) => {
     }
 };
 
+const switchMode = () => {
+    users.value = isDiscoverMode.value ? discoveryUsers.value : friends.value;
+};
+
 const isDiscoverMode = computed({
-    get: () => mode.value === 'discover',
+    get: () => {
+        return mode.value === 'discover';
+    },
     set: (newValue) => {
         if (newValue) {
             mode.value = 'discover';
@@ -90,7 +113,14 @@ const isDiscoverMode = computed({
             mode.value = 'myFriends';
             history.pushState({}, '', '/friends/my-friends');
         }
+        switchMode();
     },
+});
+
+onMounted(() => {
+    if (!isDiscoverMode.value) {
+        getUsers();
+    }
 });
 </script>
 <template>
@@ -103,24 +133,30 @@ const isDiscoverMode = computed({
 
             <div class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 discovery-container">
-                    <div class="search-container flex">
+                    <div class="search-container flex align-center">
                         <input
                             v-model="searchInput"
                             placeholder="Search for user..."
-                            class="bg-blue-100 rounded-lg w-full mb-4"
+                            class="bg-white rounded-lg w-full"
                             @keyup.enter="search"
                         />
-                        <v-progress-circular
-                            v-if="searchLoading"
-                            indeterminate
-                            color="white ml-2"
-                        ></v-progress-circular>
+                        <div class="w-12">
+                            <v-progress-circular
+                                v-if="searchLoading"
+                                indeterminate
+                                color="white"
+                                class="ml-4"
+                            ></v-progress-circular>
+                            <v-btn v-else variant="text" @click="refresh">
+                                <v-icon icon="mdi-refresh" color="white" size="x-large" />
+                            </v-btn>
+                        </div>
                     </div>
 
-                    <v-divider :thickness="4"></v-divider>
+                    <v-divider :thickness="4" class="mt-4"></v-divider>
 
                     <div class="shadow-sm sm:rounded-lg flex flex-col">
-                        <div v-if="!users.length || !hasSearched" class="m-12">
+                        <div v-if="!users.length || (!hasSearched && isDiscoverMode)" class="m-12">
                             <p class="text-center text-gray-400">
                                 <span v-if="!hasSearched">Search for a name or an email address!</span>
                                 <span v-else>No users found, sorry!</span>
@@ -131,7 +167,7 @@ const isDiscoverMode = computed({
                             <div
                                 v-for="(u, index) in users"
                                 :key="index"
-                                class="flex bg-white shadow-sm sm:rounded-lg p-3 my-8 justify-between"
+                                class="flex bg-blue-200 shadow-sm sm:rounded-lg p-3 my-8 justify-between"
                             >
                                 <p>
                                     {{ u.name }} <br />
@@ -148,6 +184,7 @@ const isDiscoverMode = computed({
                                         class="user-button"
                                         :loading="userLoading[u.id]"
                                         @mouseover="userHover[u.id] = true"
+                                        @mouseleave="userHover[u.id] = false"
                                         @focus="userHover[u.id] = true"
                                         @blur="userHover[u.id] = false"
                                         @click="toggleUser(u)"

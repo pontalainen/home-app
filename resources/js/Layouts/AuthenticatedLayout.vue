@@ -78,10 +78,10 @@ watch(drawer, (newVal) => {
                                         Chat
                                     </NavLink>
                                     <NavLink
-                                        :href="route('friends::discover')"
+                                        :href="route('friends::myFriends')"
                                         :active="
-                                            route().current('friends::discover') ||
-                                            route().current('friends::myFriends')
+                                            route().current('friends::myFriends') ||
+                                            route().current('friends::discover')
                                         "
                                     >
                                         Friends

@@ -30,6 +30,16 @@ class FriendshipController extends Controller
         ]);
     }
 
+    public function getUsers(Request $request)
+    {
+        return User::getDiscoveryUsers($request->search);
+    }
+
+    public function getFriends()
+    {
+        return Auth::user()->friends()->with(['friends', 'chats'])->get();
+    }
+
     public function toggleFriendship(User $user, Request $request)
     {
         if ($request->type === 'add') {
@@ -37,10 +47,5 @@ class FriendshipController extends Controller
         } else {
             return Auth::user()->removeFriend($user);
         }
-    }
-
-    public function getUsers(Request $request)
-    {
-        return User::getDiscoveryUsers($request->search);
     }
 }
