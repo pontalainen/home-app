@@ -167,7 +167,7 @@ onMounted(() => {
                             <div
                                 v-for="(u, index) in users"
                                 :key="index"
-                                class="flex bg-blue-200 shadow-sm sm:rounded-lg p-3 my-8 justify-between"
+                                class="flex bg-blue-200 shadow-sm rounded-lg p-3 my-8 justify-between"
                             >
                                 <p>
                                     {{ u.name }} <br />
