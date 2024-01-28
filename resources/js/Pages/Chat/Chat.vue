@@ -153,7 +153,9 @@ const otherUser = () => {
     return chat.value.users.find((u) => u.id !== user.value.id);
 };
 
-const chatOptions = ref([{ title: 'Click Me' }, { title: 'Click Me' }, { title: 'Click Me' }, { title: 'Click Me 2' }]);
+const chatOptions = ref(['Change bouble color']);
+const isActive = ref(false);
+const boubleColor = ref(null);
 </script>
 <template>
     <div>
@@ -165,18 +167,23 @@ const chatOptions = ref([{ title: 'Click Me' }, { title: 'Click Me' }, { title: 
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                         <div class="w-full -mb-12 flex justify-end">
                             <v-menu location="bottom">
-                                <template #activator="{ p }">
-                                    <v-btn class="mt-6 mr-8" variant="text" size="regular" color="white" v-bind="p">
+                                <!-- eslint-disable-next-line vue/no-template-shadow -->
+                                <template #activator="{ props }">
+                                    <v-btn class="mt-6 mr-8" variant="text" size="regular" color="white" v-bind="props">
                                         <v-icon icon="mdi-cog-outline" size="x-large" />
                                     </v-btn>
                                 </template>
 
-                                <v-list width="150">
-                                    <v-list-item v-for="(option, i) in chatOptions" :key="i">
-                                        <v-list-item-title @click="console.log('tja')">
-                                            <v-btn variant="text">
-                                                {{ option }}
-                                            </v-btn>
+                                <v-list width="210">
+                                    <v-list-item
+                                        v-for="(option, i) in chatOptions"
+                                        :key="i"
+                                        :value="i"
+                                        class="!h-min !min-h-0"
+                                        @click="isActive = true"
+                                    >
+                                        <v-list-item-title class="!min-h-0">
+                                            {{ option }}
                                         </v-list-item-title>
                                     </v-list-item>
                                 </v-list>
@@ -256,13 +263,37 @@ const chatOptions = ref([{ title: 'Click Me' }, { title: 'Click Me' }, { title: 
                 </div>
             </div>
         </AuthenticatedLayout>
+
+        <v-dialog v-model="isActive" width="500" transition="dialog-bottom-transition">
+            <template #default>
+                <v-card>
+                    <div class="w-full flex justify-center">
+                        <v-color-picker v-model="boubleColor" :modes="['hexa']"></v-color-picker>
+                    </div>
+
+                    <v-card-actions class="mt-4">
+                        <v-btn text="Cancel" @click="isActive = false"></v-btn>
+
+                        <v-spacer></v-spacer>
+
+                        <v-btn text="Save" @click="isActive = false"></v-btn>
+                    </v-card-actions>
+                </v-card>
+            </template>
+        </v-dialog>
     </div>
 </template>
 <style>
+.v-list-item__content {
+    min-height: 0;
+    padding: 0.5rem;
+}
+
 .see-chats {
     color: rgb(209 213 219);
     text-decoration: underline;
 }
+
 .chat-container {
     height: 80vh;
 }

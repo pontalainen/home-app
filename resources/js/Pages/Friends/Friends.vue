@@ -219,13 +219,14 @@ onMounted(() => {
                                     </v-btn>
 
                                     <v-menu location="top">
-                                        <template #activator="{ p }">
+                                        <!-- eslint-disable-next-line vue/no-template-shadow -->
+                                        <template #activator="{ props }">
                                             <v-btn
                                                 density="compact"
                                                 variant="text"
                                                 size="regular"
                                                 class="user-button"
-                                                v-bind="p"
+                                                v-bind="props"
                                             >
                                                 <v-icon icon="mdi-dots-horizontal"></v-icon>
                                             </v-btn>
