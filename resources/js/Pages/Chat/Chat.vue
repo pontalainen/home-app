@@ -161,7 +161,12 @@ const otherUser = () => {
         <AuthenticatedLayout :current-chat="chat" :open-drawer="drawer" @switch-chat="switchChat">
             <div class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex">
+                    <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
+                        <div class="w-full -mb-12 flex justify-end">
+                            <v-btn class="mt-6 mr-8" variant="text" color="white" size="large">
+                                <v-icon icon="mdi-cog-outline" size="x-large" />
+                            </v-btn>
+                        </div>
                         <div v-if="chat" class="chat-window p-6 rounded-lg">
                             <div class="flex justify-center -mt-8 mb-4">
                                 <p class="text-blue-100 font-bold text-xl">
@@ -252,6 +257,7 @@ const otherUser = () => {
     max-width: 50%;
     width: 50vw;
     margin: 2em auto;
+    height: 72vh;
 }
 
 .content-container {
