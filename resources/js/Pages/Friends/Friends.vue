@@ -250,7 +250,7 @@ onMounted(() => {
         </AuthenticatedLayout>
     </div>
 </template>
-<style>
+<style scoped>
 .discovery-container {
     min-width: 30rem;
     max-width: 50%;

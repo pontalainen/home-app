@@ -163,7 +163,7 @@ const otherUser = () => {
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                         <div class="w-full -mb-12 flex justify-end">
-                            <v-btn class="mt-6 mr-8" variant="text" color="white" size="large">
+                            <v-btn class="mt-6 mr-8 user-button" variant="text" size="regular" color="white">
                                 <v-icon icon="mdi-cog-outline" size="x-large" />
                             </v-btn>
                         </div>
@@ -243,7 +243,7 @@ const otherUser = () => {
         </AuthenticatedLayout>
     </div>
 </template>
-<style>
+<style scoped>
 .see-chats {
     color: rgb(209 213 219);
     text-decoration: underline;
