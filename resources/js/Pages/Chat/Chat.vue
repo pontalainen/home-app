@@ -152,8 +152,9 @@ const switchChat = (newChat) => {
 const otherUser = () => {
     return chat.value.users.find((u) => u.id !== user.value.id);
 };
-</script>
 
+const chatOptions = ref([{ title: 'Click Me' }, { title: 'Click Me' }, { title: 'Click Me' }, { title: 'Click Me 2' }]);
+</script>
 <template>
     <div>
         <Head title="Chat" />
@@ -163,9 +164,23 @@ const otherUser = () => {
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                         <div class="w-full -mb-12 flex justify-end">
-                            <v-btn class="mt-6 mr-8 user-button" variant="text" size="regular" color="white">
-                                <v-icon icon="mdi-cog-outline" size="x-large" />
-                            </v-btn>
+                            <v-menu location="bottom">
+                                <template #activator="{ p }">
+                                    <v-btn class="mt-6 mr-8" variant="text" size="regular" color="white" v-bind="p">
+                                        <v-icon icon="mdi-cog-outline" size="x-large" />
+                                    </v-btn>
+                                </template>
+
+                                <v-list width="150">
+                                    <v-list-item v-for="(option, i) in chatOptions" :key="i">
+                                        <v-list-item-title @click="console.log('tja')">
+                                            <v-btn variant="text">
+                                                {{ option }}
+                                            </v-btn>
+                                        </v-list-item-title>
+                                    </v-list-item>
+                                </v-list>
+                            </v-menu>
                         </div>
                         <div v-if="chat" class="chat-window p-6 rounded-lg">
                             <div class="flex justify-center -mt-8 mb-4">
@@ -243,7 +258,7 @@ const otherUser = () => {
         </AuthenticatedLayout>
     </div>
 </template>
-<style scoped>
+<style>
 .see-chats {
     color: rgb(209 213 219);
     text-decoration: underline;
