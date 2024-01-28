@@ -162,10 +162,11 @@ watch(drawer, (newVal) => {
                                     Say hello to {{ chat.otherUser.name }}!
                                 </span>
                             </p>
+
                             <v-divider
                                 :thickness="2"
-                                class="my-2 mt-4 border-opacity-100"
-                                :class="{ 'blue-divider': currentChat && chat.id !== currentChat.id }"
+                                class="my-2 mt-4 border-opacity-100 blue-divider"
+                                :class="{ 'default-divider': currentChat && chat.id === currentChat.id }"
                             ></v-divider>
                         </v-list-item>
                     </v-list>
@@ -262,5 +263,8 @@ watch(drawer, (newVal) => {
 }
 .blue-divider {
     border-color: rgb(66, 126, 255) !important;
+}
+.default-divider {
+    border-color: rgb(229, 231, 235) !important;
 }
 </style>
