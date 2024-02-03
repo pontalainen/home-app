@@ -17,6 +17,7 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false);
 
             $table->string('nickname')->nullable();
+            $table->string('bubble_color')->nullable();
 
             $table->foreignId('chat_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id');

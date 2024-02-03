@@ -49,6 +49,8 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
+
+    Route::put('/chat/{chat}/user/{user}/update', [ChatController::class, 'updateUser'])->name('updateUser');
 });
 
 Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {

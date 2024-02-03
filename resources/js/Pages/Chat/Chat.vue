@@ -1,6 +1,7 @@
 <script setup>
+// 1. Imports and Component Setup
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { toRefs, ref, onMounted, nextTick } from 'vue';
+import { toRefs, ref, onMounted, nextTick, watch, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -24,80 +25,35 @@ const props = defineProps({
 });
 const { user, chatProp, lastMessageIdProp } = toRefs(props);
 
+// 2. Reactive State
 const chat = ref(chatProp.value);
 const lastMessageId = ref(lastMessageIdProp.value);
-if (chat.value) {
-    chat.value.messages = chat.value.messages.reverse();
-}
-
 const newMessage = ref('');
 const chatScroll = ref(null);
 const chatInput = ref(null);
 const isAtBottom = ref(true);
 const loading = ref(false);
 const drawer = ref(false);
+const noMoreMessages = ref(false);
+const chatOptions = ref(['Change bubble color']);
+const colorModalOpen = ref(false);
+const selectedUser = ref(chat.value.users.find((u) => u.id === user.value.id));
+const prevUserValues = ref([]);
+const otherUser = chat.value.users.find((u) => u.id !== user.value.id);
 
-// Regular function for immediate response
-const sendMessage = () => {
-    if (loading.value || newMessage.value === '') {
-        return;
-    }
+if (chat.value) {
+    chat.value.messages = chat.value.messages.reverse();
+}
 
-    loading.value = true;
-    saveMessage(newMessage.value);
-    newMessage.value = '';
-};
+watch(selectedUser, () => {
+    revertUserChanges();
+});
 
-const saveMessage = async (content) => {
-    try {
-        await axios.post(route('chat::sendMessage', { chat: chat.value, user: user.value }), {
-            content,
-        });
-        await nextTick();
-        scrollToBottom();
-    } catch (error) {
-        console.error(error);
-    } finally {
-        loading.value = false;
-    }
-};
+const updateUserUrl = computed(() => {
+    return route('chat::updateUser', { chat: chat.value.id, user: selectedUser.value.id });
+});
 
-let noMoreMessages = false;
-const loadMessages = async ({ done }) => {
-    if (noMoreMessages) {
-        done('empty');
-        return;
-    }
-
-    try {
-        const previousScrollHeight = chatScroll.value.scrollHeight;
-        const previousScrollTop = chatScroll.value.scrollTop;
-
-        const newMessages = await axios.post(route('chat::loadMessages', { chat: chat.value }), {
-            lastMessageId: lastMessageId.value,
-        });
-
-        if (typeof newMessages.data.messages === 'object') {
-            chat.value.messages.unshift(...newMessages.data.messages);
-            lastMessageId.value = newMessages.data.lastMessageId;
-
-            newMessage.value = '';
-
-            await nextTick();
-            const newScrollHeight = chatScroll.value.scrollHeight;
-            chatScroll.value.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
-
-            done('ok');
-        } else {
-            noMoreMessages = true;
-            done('empty');
-        }
-    } catch (error) {
-        console.error(error);
-        done('error');
-    }
-};
-
+// 4. Lifecycle Hooks
 onMounted(() => {
     if (chat.value) {
         chatScroll.value.addEventListener('scroll', () => {
@@ -114,19 +70,54 @@ onMounted(() => {
     }
 });
 
-const formatDate = (dateString) => {
-    const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+// 5. Methods
+const sendMessage = () => {
+    if (loading.value || newMessage.value === '') {
+        return;
+    }
+    loading.value = true;
+    saveMessage(newMessage.value);
+    newMessage.value = '';
 };
 
-const scrollToBottom = () => {
-    chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
+const saveMessage = async (content) => {
+    try {
+        await axios.post(route('chat::sendMessage', { chat: chat.value, user: user.value }), { content });
+        await nextTick();
+        scrollToBottom();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const loadMessages = async ({ done }) => {
+    if (noMoreMessages.value) {
+        done('empty');
+        return;
+    }
+    try {
+        const previousScrollHeight = chatScroll.value.scrollHeight;
+        const previousScrollTop = chatScroll.value.scrollTop;
+        const newMessages = await axios.post(route('chat::loadMessages', { chat: chat.value }), {
+            lastMessageId: lastMessageId.value,
+        });
+        if (typeof newMessages.data.messages === 'object') {
+            chat.value.messages.unshift(...newMessages.data.messages);
+            lastMessageId.value = newMessages.data.lastMessageId;
+            await nextTick();
+            const newScrollHeight = chatScroll.value.scrollHeight;
+            chatScroll.value.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
+            done('ok');
+        } else {
+            noMoreMessages.value = true;
+            done('empty');
+        }
+    } catch (error) {
+        console.error(error);
+        done('error');
+    }
 };
 
 const getChat = async (newChat) => {
@@ -149,13 +140,88 @@ const switchChat = (newChat) => {
     getChat(newChat);
 };
 
-const otherUser = () => {
-    return chat.value.users.find((u) => u.id !== user.value.id);
+const setUserPivotValues = () => {
+    prevUserValues.value = chat.value.users.map((u) => ({
+        id: u.id,
+        color: u.pivot.bubble_color,
+        nickname: u.pivot.nickname ?? u.name,
+    }));
 };
 
-const chatOptions = ref(['Change bouble color']);
-const isActive = ref(false);
-const boubleColor = ref(null);
+const revertUserChanges = () => {
+    chat.value.users.map((u) => {
+        const prevValues = prevUserValues.value.find((c) => c.id === u.id);
+        if (prevValues) {
+            u.pivot.bubble_color = prevValues.color;
+            u.pivot.nickname = prevValues.nickname;
+        }
+        return u;
+    });
+};
+
+const openColorModal = () => {
+    colorModalOpen.value = true;
+    setUserPivotValues();
+};
+
+const closeColorModal = () => {
+    colorModalOpen.value = false;
+    revertUserChanges();
+};
+
+const saveColor = async () => {
+    colorModalOpen.value = false;
+    try {
+        await axios.put(updateUserUrl.value, {
+            bubble_color: selectedUser.value.pivot.bubble_color,
+        });
+
+        // Use below when status messages are implemented
+        // await nextTick();
+        // scrollToBottom();
+    } catch {
+        revertUserChanges();
+    }
+};
+
+const saveNickname = async () => {
+    try {
+        await axios.put(updateUserUrl.value, {
+            nickname: selectedUser.value.pivot.nickname,
+        });
+    } catch {
+        revertUserChanges();
+    }
+};
+
+// 6. External or Helper Functions
+const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+const scrollToBottom = () => {
+    chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
+};
+
+const getBubbleColor = (senderId) => {
+    const sender = chat.value.users.find((u) => u.id === senderId);
+    return sender.pivot.bubble_color;
+};
+
+const getTextColor = (backgroundColor) => {
+    if (!backgroundColor) {
+        return '#000000';
+    }
+
+    const color = backgroundColor.charAt(0) === '#' ? backgroundColor.substring(1) : backgroundColor;
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    // Using the YIQ color space formula to determine brightness
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#000000' : '#FFFFFF'; // dark text for light backgrounds and vice versa
+};
 </script>
 <template>
     <div>
@@ -180,7 +246,7 @@ const boubleColor = ref(null);
                                         :key="i"
                                         :value="i"
                                         class="!h-min !min-h-0"
-                                        @click="isActive = true"
+                                        @click="openColorModal"
                                     >
                                         <v-list-item-title class="!min-h-0">
                                             {{ option }}
@@ -196,7 +262,7 @@ const boubleColor = ref(null);
                                         {{ chat.name }}
                                     </span>
                                     <span v-else>
-                                        {{ otherUser().name }}
+                                        {{ otherUser.name }}
                                     </span>
                                 </p>
                             </div>
@@ -212,6 +278,10 @@ const boubleColor = ref(null);
                                             :class="
                                                 message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'
                                             "
+                                            :style="{
+                                                backgroundColor: getBubbleColor(message.user_id),
+                                                color: getTextColor(getBubbleColor(message.user_id)),
+                                            }"
                                         >
                                             <span v-if="chat.users.length > 2" class="text-xs mb-1">
                                                 {{ message.user ? message.user.name : '[User deleted]' }}<br />
@@ -264,19 +334,32 @@ const boubleColor = ref(null);
             </div>
         </AuthenticatedLayout>
 
-        <v-dialog v-model="isActive" width="500" transition="dialog-bottom-transition">
+        <v-dialog v-model="colorModalOpen" width="500" transition="dialog-bottom-transition">
             <template #default>
-                <v-card>
-                    <div class="w-full flex justify-center">
-                        <v-color-picker v-model="boubleColor" :modes="['hexa']"></v-color-picker>
+                <v-card class="!bg-gray-800 flex flex-col">
+                    <v-select
+                        v-model="selectedUser"
+                        :items="chat.users"
+                        item-title="name"
+                        item-value="name"
+                        return-object
+                        density="comfortable"
+                        class="!bg-blue-50 mb-4"
+                    ></v-select>
+                    <div class="w-full flex justify-center p-2">
+                        <v-color-picker
+                            v-model="selectedUser.pivot.bubble_color"
+                            class="!bg-blue-50 flex"
+                            :modes="['hexa']"
+                        ></v-color-picker>
                     </div>
 
                     <v-card-actions class="mt-4">
-                        <v-btn text="Cancel" @click="isActive = false"></v-btn>
+                        <v-btn color="white" text="Cancel" @click="closeColorModal"></v-btn>
 
                         <v-spacer></v-spacer>
 
-                        <v-btn text="Save" @click="isActive = false"></v-btn>
+                        <v-btn color="white" text="Save" @click="saveColor"></v-btn>
                     </v-card-actions>
                 </v-card>
             </template>
@@ -360,5 +443,9 @@ const boubleColor = ref(null);
 
 .message {
     box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.6);
+}
+
+.v-input__details {
+    display: none;
 }
 </style>

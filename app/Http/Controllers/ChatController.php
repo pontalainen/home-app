@@ -6,6 +6,7 @@ use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
+use Error;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,12 +22,14 @@ class ChatController extends Controller
     public function index()
     {
         $chat = Auth::user()->chats()->first();
-        $chat->loadChat();
+        if ($chat) {
+            $chat->loadChat();
+        }
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
             'chat' => $chat,
-            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+            'lastMessageId' => $chat && $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
     }
 
@@ -121,5 +124,24 @@ class ChatController extends Controller
         } catch (Exception $e) {
             return $e;
         }
+    }
+
+    public function updateUser(Chat $chat, User $user, Request $request)
+    {
+        $this->authorize('view', $chat);
+
+        $user = $chat->users()
+            ->where('users.id', $user->id)
+            ->firstOrFail();
+
+        $attributesToUpdate = $request->only(['bubble_color', 'nickname']);
+
+        foreach ($attributesToUpdate as $key => $attr) {
+            $user->pivot->{$key} = $attr;
+        }
+
+        $user->pivot->save();
+
+        return response()->json(['message' => 'User updated successfully.'], 200);
     }
 }
