@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Chat;
+use Auth;
 
 class User extends Authenticatable
 {
@@ -51,13 +52,42 @@ class User extends Authenticatable
 
     public function friends()
     {
-        return $this->hasManyThrough(
-            User::class,
-            'user_friendships',
-            'user_one_id',
-            'id',
-            'id',
-            'user_two_id'
-        );
+        return $this->belongsToMany(User::class, 'user_friendships', 'user_one_id', 'user_two_id');
+    }
+
+    public function isFriendWith(User $user)
+    {
+        return $this->friends->contains($user);
+    }
+
+    public function addFriend(User $friend)
+    {
+        if ($this->isFriendWith($friend)) {
+            return;
+        }
+        $this->friends()->attach($friend->id, ['created_at' => now(), 'updated_at' => now()]);
+        $friend->friends()->attach(Auth::user()->id, ['created_at' => now(), 'updated_at' => now()]);
+
+        return 'ok';
+    }
+
+    public function removeFriend(User $friend)
+    {
+        $this->friends()->detach($friend->id);
+        $friend->friends()->detach(Auth::user()->id);
+
+        return 'ok';
+    }
+
+    public static function getDiscoveryUsers($search)
+    {
+        return User::with(['friends', 'chats'])
+            ->where('id', '!=', Auth::user()->id)
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            })
+            ->limit(30)
+            ->get();
     }
 }

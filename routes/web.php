@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\FriendshipController;
 use App\Models\Chat;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
@@ -39,10 +40,26 @@ Route::name('profile::')->middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat');
+    Route::get('/chat', [ChatController::class, 'index'])->name('index');
+    Route::get('/chat/get-chats', [ChatController::class, 'getChats'])->name('getChats');
+    Route::get('/chat/get-chat/{chat}', [ChatController::class, 'getChat'])->name('getChat');
+
+    Route::get('/chat/{chat}', [ChatController::class, 'chat'])->name('chat');
+    Route::post('/chat/check-chat', [ChatController::class, 'checkChat'])->name('checkChat');
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
+});
+
+Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/friends', [FriendshipController::class, 'index'])->name('discover');
+    Route::get('/friends/discover', [FriendshipController::class, 'index'])->name('discover');
+    Route::get('/friends/my-friends', [FriendshipController::class, 'myFriends'])->name('myFriends');
+
+    Route::post('/friends/get-users', [FriendshipController::class, 'getUsers'])->name('getUsers');
+    Route::post('/friends/get-friends', [FriendshipController::class, 'getFriends'])->name('getFriends');
+
+    Route::post('/friends/toggle-friendship/{user}', [FriendshipController::class, 'toggleFriendship'])->name('toggleFriendship');
 });
 
 require __DIR__ . '/auth.php';

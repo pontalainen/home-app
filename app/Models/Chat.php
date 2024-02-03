@@ -6,17 +6,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Message;
+use Auth;
 
 class Chat extends Model
 {
     use HasFactory;
 
-    public static function getChat()
+    public static function createChat($userId)
     {
-        return self::with(['users', 'messages' => function ($q) {
+        $chat = self::create();
+        $chat->users()->attach(auth()->user()->id, ['joined_at' => now()]);
+        $chat->users()->attach($userId, ['joined_at' => now()]);
+
+        return $chat;
+    }
+
+    public function loadChat()
+    {
+        $this->load(['users', 'messages' => function ($q) {
             $messages = $q->with('user')->latest()->take(25)->get();
             return $messages->reverse();
-        }])->first();
+        }]);
     }
 
     public function users()
@@ -27,5 +37,10 @@ class Chat extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function latestMessage()
+    {
+        return $this->hasOne(Message::class)->latest();
     }
 }

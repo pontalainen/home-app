@@ -26,8 +26,8 @@ class ChatFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Chat $chat) {
-            $chat->users()->attach(User::find(1), ['joined_at' => now(), 'left_at' => now()]);
-            $chat->users()->attach(User::find(2), ['joined_at' => now(), 'left_at' => now()]);
+            $chat->users()->attach(User::find(1), ['joined_at' => now()]);
+            $chat->users()->attach(User::find(2), ['joined_at' => now()]);
         });
     }
 }

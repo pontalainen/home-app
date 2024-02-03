@@ -20,14 +20,77 @@ class ChatController extends Controller
 
     public function index()
     {
-        $chat = Chat::getChat();
-        $this->authorize('view', $chat);
+        $chat = Auth::user()->chats()->first();
+        $chat->loadChat();
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
             'chat' => $chat,
             'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
+    }
+
+    public function chat(Chat $chat)
+    {
+        $this->authorize('view', $chat);
+        $chat->loadChat();
+
+        return Inertia::render('Chat/Chat', [
+            'user' => Auth::user(),
+            'chatProp' => $chat,
+            'lastMessageIdProp' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+        ]);
+    }
+
+    public function checkChat(Request $request)
+    {
+        $chat = Chat::whereHas('users', function ($q) use ($request) {
+            $q->where('user_id', $request->user);
+        })->whereHas('users', function ($q) {
+            $q->where('user_id', Auth::id());
+        })->first();
+
+        if (!$chat) {
+            $chat = Chat::createChat($request->user);
+        }
+
+        $this->authorize('view', $chat);
+        return $chat;
+    }
+
+    public function getChat(Chat $chat)
+    {
+        $this->authorize('view', $chat);
+        $chat->loadChat();
+        $chat->otherUser = $chat->users->where('id', '!=', Auth::id())->first();
+
+        return response()->json([
+            'chat' => $chat,
+            'lastMessageId' => $chat->messages->first() ? $chat->messages->last()->id : 1,
+        ]);
+    }
+
+    public function getChats()
+    {
+        $chats = Auth::user()->chats()
+            ->with(['users', 'latestMessage', 'latestMessage.user'])
+            ->limit(25)
+            ->get()
+            ->sortByDesc(function ($chat) {
+                if ($chat->lastMessage) {
+                    return $chat->latestMessage->created_at;
+                } else {
+                    return $chat->created_at;
+                }
+            });
+
+        $chats = $chats->map(function ($chat) {
+            $chat->otherUser = $chat->users->where('id', '!=', Auth::id())->first();
+            return $chat;
+        });
+
+        // Converted to array to keep order
+        return response()->json($chats->values()->all());
     }
 
     public function loadMessages(Chat $chat, Request $request)
