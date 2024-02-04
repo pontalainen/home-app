@@ -124,7 +124,7 @@ const areFriends = (u) => {
         <Head v-if="mode === 'discover'" title="Discover friends" />
         <Head v-else title="My friends" />
 
-        <AuthenticatedLayout @switch-chat="switchChat">
+        <AuthenticatedLayout :user="user" @switch-chat="switchChat">
             <v-switch v-model="isDiscoverMode" hide-details inset label="Discover mode"></v-switch>
 
             <div class="py-12">

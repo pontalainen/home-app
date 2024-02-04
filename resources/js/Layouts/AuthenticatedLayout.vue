@@ -76,6 +76,13 @@ const getChatName = (chat) => {
     }
     return chat.otherUser.pivot.nickname ? chat.otherUser.pivot.nickname : chat.otherUser.name;
 };
+
+const getCurrentChatUser = (chat) => {
+    if (!chat || !user.value) {
+        return null;
+    }
+    return chat.users.find((u) => u.id === user.value.id);
+};
 </script>
 
 <template>
@@ -193,9 +200,12 @@ const getChatName = (chat) => {
                             </p>
 
                             <v-divider
+                                class="my-2 mt-4 border-opacity-100"
                                 :thickness="2"
-                                class="my-2 mt-4 border-opacity-100 blue-divider"
                                 :class="{ 'default-divider': currentChat && chat.id === currentChat.id }"
+                                :style="{
+                                    borderColor: getCurrentChatUser(chat).pivot.bubble_color ?? 'rgb(66, 126, 255)',
+                                }"
                             ></v-divider>
                         </v-list-item>
                     </v-list>
@@ -276,7 +286,7 @@ const getChatName = (chat) => {
     color: rgb(223 224 226 / var(--tw-bg-opacity));
 }
 .active-chat {
-    background-color: rgb(66, 126, 255);
+    background-color: rgb(176, 192, 207);
 }
 .quick-text {
     display: -webkit-box;
@@ -289,11 +299,5 @@ const getChatName = (chat) => {
 }
 .v-list-item-title {
     font-weight: bold;
-}
-.blue-divider {
-    border-color: rgb(66, 126, 255) !important;
-}
-.default-divider {
-    border-color: rgb(229, 231, 235) !important;
 }
 </style>
