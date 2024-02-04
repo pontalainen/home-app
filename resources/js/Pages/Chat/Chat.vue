@@ -37,20 +37,27 @@ const drawer = ref(false);
 const noMoreMessages = ref(false);
 const chatOptions = ref(['Change bubble color']);
 const colorModalOpen = ref(false);
-const selectedUser = ref(chat.value.users.find((u) => u.id === user.value.id));
+const selectedUser = ref(chat.value ? chat.value.users.find((u) => u.id === user.value.id) : null);
 const prevUserValues = ref([]);
-const otherUser = chat.value.users.find((u) => u.id !== user.value.id);
+const nameHover = ref(false);
+const editingName = ref(false);
+const nicknameInputEl = ref('');
 
 if (chat.value) {
     chat.value.messages = chat.value.messages.reverse();
 }
 
+// 3. Computed Properties and Watchers
 watch(selectedUser, () => {
     revertUserChanges();
 });
 
 const updateUserUrl = computed(() => {
     return route('chat::updateUser', { chat: chat.value.id, user: selectedUser.value.id });
+});
+
+const otherUser = computed(() => {
+    return chat.value ? chat.value.users.find((u) => u.id !== user.value.id) : null;
 });
 
 // 4. Lifecycle Hooks
@@ -184,11 +191,31 @@ const saveColor = async () => {
     }
 };
 
+const editName = () => {
+    selectedUser.value = otherUser.value;
+    setUserPivotValues();
+
+    if (!selectedUser.value.pivot.nickname) {
+        selectedUser.value.pivot.nickname = selectedUser.value.name;
+    }
+
+    editingName.value = true;
+    nextTick(() => {
+        nicknameInputEl.value.focus();
+    });
+};
+
+const cancelNameEdit = () => {
+    editingName.value = false;
+    revertUserChanges();
+};
+
 const saveNickname = async () => {
     try {
         await axios.put(updateUserUrl.value, {
             nickname: selectedUser.value.pivot.nickname,
         });
+        editingName.value = false;
     } catch {
         revertUserChanges();
     }
@@ -256,14 +283,51 @@ const getTextColor = (backgroundColor) => {
                             </v-menu>
                         </div>
                         <div v-if="chat" class="chat-window p-6 rounded-lg">
-                            <div class="flex justify-center -mt-8 mb-4">
-                                <p class="text-blue-100 font-bold text-xl">
+                            <div
+                                class="flex justify-center -mt-8 mb-4"
+                                @mouseover="nameHover = true"
+                                @mouseleave="nameHover = false"
+                                @focus="nameHover = true"
+                                @focusout="nameHover = false"
+                            >
+                                <div v-if="editingName" class="relative w-full">
+                                    <div class="flex justify-center nickname-container">
+                                        <input
+                                            ref="nicknameInputEl"
+                                            v-model="selectedUser.pivot.nickname"
+                                            placeholder="User nickname"
+                                            class="nickname-input text-blue-100 font-bold text-xl text-center p-0"
+                                            variant="solo"
+                                            maxlength="25"
+                                            @blur="cancelNameEdit"
+                                            @keyup.enter="saveNickname"
+                                        />
+                                    </div>
+                                    <v-btn
+                                        variant="text"
+                                        size="regular"
+                                        class="!absolute top-0 bottom-0 right-2"
+                                        @click="saveNickname"
+                                    >
+                                        <v-icon icon="mdi-send-check-outline" class="text-blue-100"></v-icon>
+                                    </v-btn>
+                                </div>
+                                <p v-else class="text-blue-100 font-bold text-xl relative">
                                     <span v-if="chat.users.length > 2">
                                         {{ chat.name }}
                                     </span>
                                     <span v-else>
-                                        {{ otherUser.name }}
+                                        {{ otherUser.pivot.nickname ?? otherUser.name }}
                                     </span>
+                                    <v-btn
+                                        variant="text"
+                                        size="regular"
+                                        class="ml-2 !absolute top-0 bottom-0"
+                                        :class="{ '!hidden': !nameHover }"
+                                        @click="editName"
+                                    >
+                                        <v-icon icon="mdi-pencil" size="x-small" class="text-blue-100"></v-icon>
+                                    </v-btn>
                                 </p>
                             </div>
 
@@ -344,6 +408,7 @@ const getTextColor = (backgroundColor) => {
                         item-value="name"
                         return-object
                         density="comfortable"
+                        variant="no-border"
                         class="!bg-blue-50 mb-4"
                     ></v-select>
                     <div class="w-full flex justify-center p-2">
@@ -367,6 +432,15 @@ const getTextColor = (backgroundColor) => {
     </div>
 </template>
 <style>
+.nickname-input:focus {
+    box-shadow: none;
+}
+
+.nickname-container {
+    border-bottom: 1px solid white;
+    margin-bottom: -1px;
+}
+
 .v-list-item__content {
     min-height: 0;
     padding: 0.5rem;
