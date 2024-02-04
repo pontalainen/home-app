@@ -116,6 +116,9 @@ class ChatController extends Controller
     public function sendMessage(Chat $chat, User $user, Request $request)
     {
         $this->authorize('view', $chat);
+        $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
 
         try {
             $newMessage = Message::sendMessage($chat, $user, $request);
@@ -131,26 +134,23 @@ class ChatController extends Controller
     {
         $this->authorize('view', $chat);
 
-        $user = $chat->users()
-            ->where('users.id', $user->id)
-            ->firstOrFail();
+        $user = $chat->users()->findOrFail($user->id);
+
+        $request->validate([
+            'bubble_color' => ['nullable', 'string', 'regex:/^#([a-fA-F0-9]{6})$/'],
+            'nickname' => ['nullable', 'string', 'max:25'],
+        ]);
 
         $attributesToUpdate = $request->only(['bubble_color', 'nickname']);
-        foreach ($attributesToUpdate as $key => $attr) {
-            $user->pivot->{$key} = $attr;
-        }
-        $user->pivot->save();
+        $user->pivot->fill($attributesToUpdate)->save();
 
         $status_type = null;
-        $content = null;
         if ($request->has('bubble_color')) {
             $status_type = 'bubble_color';
-            $content = $request['bubble_color'];
-        }
-        if ($request->has('nickname')) {
+        } elseif ($request->has('nickname')) {
             $status_type = 'nickname';
-            $content = $request['nickname'];
         }
+        $content = $request->input($status_type);
 
         $messageData = [
             'type' => 'status',
@@ -166,7 +166,5 @@ class ChatController extends Controller
         } catch (Exception $e) {
             return $e;
         }
-
-        return response()->json(['message' => 'User updated successfully.'], 200);
     }
 }

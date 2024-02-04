@@ -239,7 +239,8 @@ const getTextColor = (backgroundColor) => {
     const b = parseInt(color.substring(4, 6), 16);
     // Using the YIQ color space formula to determine brightness
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    return yiq >= 128 ? '#000000' : '#FFFFFF'; // dark text for light backgrounds and vice versa
+    // Dark text for light backgrounds and vice versa
+    return yiq >= 128 ? '#000000' : '#FFFFFF';
 };
 
 const getStatusMessageContent = (message) => {
@@ -247,10 +248,10 @@ const getStatusMessageContent = (message) => {
 
     switch (message.status_type) {
         case 'bubble_color':
-            messageContent = `${message.user.name} got a new bubble color!`;
+            messageContent = `<strong>${message.user.name}</strong> is lookin' kinda <strong style="color: ${message.content};">${message.content}</strong>!`;
             break;
         case 'nickname':
-            messageContent = `${message.user.name} is now known as ${message.content}!`;
+            messageContent = `<strong>${message.user.name}</strong> is now known as <strong>${message.content}</strong>!`;
             break;
         default:
             break;
@@ -299,7 +300,7 @@ const getStatusMessageContent = (message) => {
                                 @focusout="nameHover = false"
                             >
                                 <div v-if="editingName" class="relative w-full">
-                                    <div class="flex justify-center nickname-container">
+                                    <div class="flex justify-center nickname-container" @blur="cancelNameEdit">
                                         <input
                                             ref="nicknameInputEl"
                                             v-model="selectedUser.pivot.nickname"
@@ -307,7 +308,6 @@ const getStatusMessageContent = (message) => {
                                             class="nickname-input text-blue-100 font-bold text-xl text-center p-0"
                                             variant="solo"
                                             maxlength="25"
-                                            @blur="cancelNameEdit"
                                             @keyup.enter="saveNickname"
                                         />
                                     </div>
@@ -368,7 +368,8 @@ const getStatusMessageContent = (message) => {
                                             v-else-if="message.type === 'status'"
                                             class="flex flex-col justify-center items-center"
                                         >
-                                            <span class="w-fit"> {{ getStatusMessageContent(message) }} <br /> </span>
+                                            <!-- eslint-disable-next-line vue/no-v-html -->
+                                            <span class="w-fit" v-html="getStatusMessageContent(message)" />
                                             <span class="text-xs">
                                                 {{ formatDate(message.sent_at) }}
                                             </span>
