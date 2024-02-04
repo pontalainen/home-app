@@ -22,13 +22,14 @@ class ChatController extends Controller
     public function index()
     {
         $chat = Auth::user()->chats()->first();
+
         if ($chat) {
             $chat->loadChat();
         }
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
-            'chat' => $chat,
+            'chatProp' => $chat,
             'lastMessageId' => $chat && $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
     }
