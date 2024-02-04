@@ -220,7 +220,9 @@ const formatDate = (dateString) => {
 };
 
 const scrollToBottom = () => {
-    chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
+    if (chatScroll.value) {
+        chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
+    }
 };
 
 const getBubbleColor = (senderId) => {
@@ -263,7 +265,7 @@ const getStatusMessageContent = (message) => {
     <div>
         <Head title="Chat" />
 
-        <AuthenticatedLayout :current-chat="chat" :open-drawer="drawer" @switch-chat="switchChat">
+        <AuthenticatedLayout :current-chat="chat" :user="user" :open-drawer="drawer" @switch-chat="switchChat">
             <div class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
@@ -271,7 +273,12 @@ const getStatusMessageContent = (message) => {
                             <v-menu location="bottom">
                                 <!-- eslint-disable-next-line vue/no-template-shadow -->
                                 <template #activator="{ props }">
-                                    <v-btn class="mt-6 mr-8" variant="text" size="regular" color="white" v-bind="props">
+                                    <v-btn
+                                        class="mt-6 mr-8 !text-blue-100"
+                                        variant="text"
+                                        size="regular"
+                                        v-bind="props"
+                                    >
                                         <v-icon icon="mdi-cog-outline" size="x-large" />
                                     </v-btn>
                                 </template>

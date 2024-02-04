@@ -1,6 +1,6 @@
 <script setup>
 // 1. Imports and Component Setup
-import { ref, defineEmits, onMounted, toRefs, watch } from 'vue';
+import { ref, defineEmits, onMounted, toRefs, watch, computed } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -13,6 +13,11 @@ const props = defineProps({
         required: false,
         default: () => ({}),
     },
+    user: {
+        type: Object,
+        required: false,
+        default: () => ({}),
+    },
     openDrawer: {
         type: Boolean,
         required: false,
@@ -20,7 +25,7 @@ const props = defineProps({
     },
 });
 
-const { currentChat, openDrawer } = toRefs(props);
+const { currentChat, openDrawer, user } = toRefs(props);
 
 // 2. Reactive State
 const showingNavigationDropdown = ref(false);
@@ -28,6 +33,15 @@ const drawer = ref(false);
 const chats = ref([]);
 
 // 3. Computed Properties and Watchers
+const activeColor = computed(() => {
+    if (currentChat.value && currentChat.value.users) {
+        return currentChat.value
+            ? currentChat.value.users.find((u) => u.id === user.value.id)?.pivot?.bubble_color
+            : '#123456';
+    }
+    return 'gray';
+});
+
 watch(openDrawer, () => {
     drawer.value = true;
 });
@@ -87,6 +101,7 @@ const getChatName = (chat) => {
                                     <NavLink
                                         :href="route('chat::index')"
                                         :active="route().current('chat::index') || route().current('chat::chat')"
+                                        :active-color="activeColor"
                                     >
                                         Chat
                                     </NavLink>
@@ -96,6 +111,7 @@ const getChatName = (chat) => {
                                             route().current('friends::myFriends') ||
                                             route().current('friends::discover')
                                         "
+                                        :active-color="activeColor"
                                     >
                                         Friends
                                     </NavLink>

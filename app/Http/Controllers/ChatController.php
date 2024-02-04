@@ -141,6 +141,10 @@ class ChatController extends Controller
             'nickname' => ['nullable', 'string', 'max:25'],
         ]);
 
+        if ($request->has('nickname') && $user->pivot->nickname === $request->nickname) {
+            return; // If the nickname in the request is the same as the existing nickname, just return
+        }
+
         $attributesToUpdate = $request->only(['bubble_color', 'nickname']);
         $user->pivot->fill($attributesToUpdate)->save();
 
