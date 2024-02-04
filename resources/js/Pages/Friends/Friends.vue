@@ -232,7 +232,7 @@ onMounted(() => {
                                             </v-btn>
                                         </template>
 
-                                        <v-list width="150">
+                                        <v-list width="160">
                                             <v-list-item v-for="(option, i) in userOptions" :key="i">
                                                 <v-list-item-title @click="console.log('tja')">
                                                     <v-btn variant="text">
