@@ -1,8 +1,9 @@
 <!-- eslint-disable no-restricted-globals -->
 <script setup>
+// 1. Imports and Component Setup
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toRefs, ref, nextTick, computed, onMounted } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
 const props = defineProps({
@@ -18,17 +19,35 @@ const props = defineProps({
 
 const { user, modeProp } = toRefs(props);
 
+// 2. Reactive State
 const users = ref([]);
 const discoveryUsers = ref([]);
 const friends = ref([]);
-const userLoading = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
-const userHover = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
-
 const searchInput = ref('');
 const searchLoading = ref(false);
 const hasSearched = ref(false);
 const mode = ref(modeProp.value);
+const userLoading = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
+const userHover = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false }), {}));
 
+// 3. Computed Properties and Watchers
+const isDiscoverMode = computed({
+    get: () => mode.value === 'discover',
+    set: (newValue) => {
+        mode.value = newValue ? 'discover' : 'my-friends';
+        history.pushState({}, '', `/friends/${mode.value}`);
+        switchMode();
+    },
+});
+
+// 4. Lifecycle Hooks
+onMounted(() => {
+    if (!isDiscoverMode.value) {
+        getUsers();
+    }
+});
+
+// 5. Methods
 const search = () => {
     if (!searchInput.value.length) {
         return;
@@ -44,11 +63,8 @@ const refresh = () => {
 };
 
 const getUsers = async () => {
-    users.value = isDiscoverMode.value ? discoveryUsers.value : friends.value;
-
-    const resp = isDiscoverMode.value
-        ? await axios.post(route('friends::getUsers'), { search: searchInput.value })
-        : await axios.post(route('friends::getFriends'));
+    const url = route(isDiscoverMode.value ? 'friends::getUsers' : 'friends::getFriends');
+    const resp = await axios.post(url, { search: searchInput.value });
     users.value = resp.data;
 
     await nextTick();
@@ -69,7 +85,6 @@ const toggleUser = (u) => {
 
 const toggleFriendship = async (friend, type) => {
     const resp = await axios.post(route('friends::toggleFriendship', { user: friend }), { type });
-
     await nextTick();
     userLoading.value[friend.id] = false;
     if (resp) {
@@ -77,58 +92,39 @@ const toggleFriendship = async (friend, type) => {
     }
 };
 
-const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-};
-
-const userOptions = ['View profile', 'Block user'];
-
-const areFriends = (u) => {
-    return u.friends.some((friend) => friend.id === user.value.id);
+const switchMode = () => {
+    users.value = isDiscoverMode.value ? discoveryUsers.value : friends.value;
 };
 
 const openChat = async (u) => {
     try {
         const resp = await axios.post(route('chat::checkChat'), { user: u.id });
-        window.location.href = route('chat::chat', { chat: resp.data });
+        router.visit(route('chat::chat', { chat: resp.data }));
     } catch (error) {
         console.error(error);
     }
 };
 
-const switchMode = () => {
-    users.value = isDiscoverMode.value ? discoveryUsers.value : friends.value;
+const switchChat = (newChat) => {
+    router.visit(route('chat::chat', { newChat }));
 };
 
-const isDiscoverMode = computed({
-    get: () => {
-        return mode.value === 'discover';
-    },
-    set: (newValue) => {
-        if (newValue) {
-            mode.value = 'discover';
-            history.pushState({}, '', '/friends/discover');
-        } else {
-            mode.value = 'myFriends';
-            history.pushState({}, '', '/friends/my-friends');
-        }
-        switchMode();
-    },
-});
+// 6. External or Helper Functions
+const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+};
 
-onMounted(() => {
-    if (!isDiscoverMode.value) {
-        getUsers();
-    }
-});
+const areFriends = (u) => {
+    return u.friends.some((friend) => friend.id === user.value.id);
+};
 </script>
 <template>
     <div>
         <Head v-if="mode === 'discover'" title="Discover friends" />
         <Head v-else title="My friends" />
 
-        <AuthenticatedLayout>
+        <AuthenticatedLayout @switch-chat="switchChat">
             <v-switch v-model="isDiscoverMode" hide-details inset label="Discover mode"></v-switch>
 
             <div class="py-12">

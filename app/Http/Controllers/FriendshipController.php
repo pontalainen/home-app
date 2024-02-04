@@ -26,18 +26,18 @@ class FriendshipController extends Controller
     {
         return Inertia::render('Friends/Friends', [
             'user' => Auth::user()->load('chats', 'friends'),
-            'modeProp' => 'myFriends'
+            'modeProp' => 'my-friends'
         ]);
     }
 
     public function getUsers(Request $request)
     {
-        return User::getDiscoveryUsers($request->search);
+        return Auth::user()->getDiscoveryUsers($request->search);
     }
 
-    public function getFriends()
+    public function getFriends(Request $request)
     {
-        return Auth::user()->friends()->with(['friends', 'chats'])->get();
+        return Auth::user()->getFriends($request->search);
     }
 
     public function toggleFriendship(User $user, Request $request)

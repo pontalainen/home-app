@@ -1,14 +1,11 @@
 <script setup>
+// 1. Imports and Component Setup
 import { ref, defineEmits, onMounted, toRefs, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import axios from 'axios';
-
-const showingNavigationDropdown = ref(false);
-const drawer = ref(false);
-const chats = ref([]);
 
 const props = defineProps({
     currentChat: {
@@ -25,21 +22,12 @@ const props = defineProps({
 
 const { currentChat, openDrawer } = toRefs(props);
 
-const emit = defineEmits(['switch-chat']);
-const switchChat = (newChat) => {
-    drawer.value = false;
-    emit('switch-chat', newChat);
-};
+// 2. Reactive State
+const showingNavigationDropdown = ref(false);
+const drawer = ref(false);
+const chats = ref([]);
 
-const getChats = async () => {
-    const resp = await axios.get(route('chat::getChats'));
-    chats.value = resp.data;
-};
-
-onMounted(() => {
-    getChats();
-});
-
+// 3. Computed Properties and Watchers
 watch(openDrawer, () => {
     drawer.value = true;
 });
@@ -49,6 +37,31 @@ watch(drawer, (newVal) => {
         getChats();
     }
 });
+
+// 4. Lifecycle Hooks
+onMounted(() => {
+    getChats();
+});
+
+// 5. Methods
+const emit = defineEmits(['switch-chat']);
+
+const getChats = async () => {
+    const resp = await axios.get(route('chat::getChats'));
+    chats.value = resp.data;
+};
+
+const switchChat = (newChat) => {
+    drawer.value = false;
+    emit('switch-chat', newChat);
+};
+
+const getChatName = (chat) => {
+    if (chat.users.length > 2) {
+        return chat.name;
+    }
+    return chat.otherUser.pivot.nickname ? chat.otherUser.pivot.nickname : chat.otherUser.name;
+};
 </script>
 
 <template>
@@ -144,7 +157,7 @@ watch(drawer, (newVal) => {
                             v-for="(chat, i) in chats"
                             :key="i"
                             :items="chats"
-                            :title="chat.users.length > 2 ? chat.name : chat.otherUser.name"
+                            :title="getChatName(chat)"
                             link
                             class="py-2 my-2"
                             :class="{ 'active-chat': currentChat && chat.id === currentChat.id }"

@@ -2,7 +2,7 @@
 // 1. Imports and Component Setup
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toRefs, ref, onMounted, nextTick, watch, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
 const { Echo } = window;
@@ -127,24 +127,8 @@ const loadMessages = async ({ done }) => {
     }
 };
 
-const getChat = async (newChat) => {
-    try {
-        const resp = await axios.get(route('chat::getChat', { chat: newChat }));
-        chat.value = resp.data.chat;
-        chat.value.messages = chat.value.messages.reverse();
-        lastMessageId.value = resp.data.lastMessageId;
-    } catch (error) {
-        console.error(error);
-    } finally {
-        // eslint-disable-next-line no-restricted-globals
-        history.pushState({}, '', `/chat/${newChat}`);
-        await nextTick();
-        scrollToBottom();
-    }
-};
-
 const switchChat = (newChat) => {
-    getChat(newChat);
+    router.visit(route('chat::chat', { newChat }));
 };
 
 const setUserPivotValues = () => {

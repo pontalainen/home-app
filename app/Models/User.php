@@ -79,10 +79,21 @@ class User extends Authenticatable
         return 'ok';
     }
 
-    public static function getDiscoveryUsers($search)
+    public function getDiscoveryUsers($search)
     {
-        return User::with(['friends', 'chats'])
+        return $this::with(['friends', 'chats'])
             ->where('id', '!=', Auth::user()->id)
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            })
+            ->limit(30)
+            ->get();
+    }
+
+    public function getFriends($search)
+    {
+        return $this->friends()->with(['friends', 'chats'])
             ->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                     ->orWhere('email', 'like', '%' . $search . '%');
