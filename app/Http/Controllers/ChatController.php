@@ -118,7 +118,7 @@ class ChatController extends Controller
         $this->authorize('view', $chat);
 
         try {
-            $newMessage = Message::sendMessage($chat, $user, $request->content);
+            $newMessage = Message::sendMessage($chat, $user, $request);
             broadcast(new MessageSent($newMessage));
 
             return 'ok';
@@ -136,12 +136,36 @@ class ChatController extends Controller
             ->firstOrFail();
 
         $attributesToUpdate = $request->only(['bubble_color', 'nickname']);
-
         foreach ($attributesToUpdate as $key => $attr) {
             $user->pivot->{$key} = $attr;
         }
-
         $user->pivot->save();
+
+        $status_type = null;
+        $content = null;
+        if ($request->has('bubble_color')) {
+            $status_type = 'bubble_color';
+            $content = $request['bubble_color'];
+        }
+        if ($request->has('nickname')) {
+            $status_type = 'nickname';
+            $content = $request['nickname'];
+        }
+
+        $messageData = [
+            'type' => 'status',
+            'status_type' => $status_type,
+            'content' => $content,
+        ];
+
+        try {
+            $newMessage = Message::sendMessage($chat, $user, $messageData);
+            broadcast(new MessageSent($newMessage));
+
+            return 'ok';
+        } catch (Exception $e) {
+            return $e;
+        }
 
         return response()->json(['message' => 'User updated successfully.'], 200);
     }

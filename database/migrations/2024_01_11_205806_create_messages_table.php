@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
 
+            $table->string('type')->default('text');
+            $table->string('status_type')->nullable();
+
             $table->string('content');
+            $table->string('image_url')->nullable();
 
             $table->timestamp('sent_at');
             $table->timestamp('delivered_at')->nullable();

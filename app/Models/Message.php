@@ -37,10 +37,23 @@ class Message extends Model
             ->get();
     }
 
-    public static function sendMessage(Chat $chat, User $user, $content)
+    public static function sendMessage(Chat $chat, User $user, $request)
     {
         $message = new self();
-        $message->content = $content;
+
+        $attributesToUpdate = $request;
+        if (gettype($request) === 'object') {
+            $attributesToUpdate = $request->all();
+        };
+
+        foreach ($attributesToUpdate as $key => $attr) {
+            if ($key === 'image') {
+                // Call function to store image
+            } else {
+                $message->{$key} = $attr;
+            }
+        }
+
         $message->sent_at = now();
         $message->chat()->associate($chat);
         $message->user()->associate($user);

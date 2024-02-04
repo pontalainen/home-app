@@ -106,7 +106,7 @@ const openChat = async (u) => {
 };
 
 const switchChat = (newChat) => {
-    router.visit(route('chat::chat', { newChat }));
+    router.visit(route('chat::chat', { chat: newChat }));
 };
 
 // 6. External or Helper Functions

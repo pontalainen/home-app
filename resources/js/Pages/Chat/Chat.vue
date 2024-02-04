@@ -71,6 +71,9 @@ onMounted(() => {
 
         Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
             chat.value.messages.push(e.message);
+            if (e.message.type === 'status') {
+                updateFromStatusMessage(e.message);
+            }
             await nextTick();
             scrollToBottom();
         });
@@ -128,7 +131,7 @@ const loadMessages = async ({ done }) => {
 };
 
 const switchChat = (newChat) => {
-    router.visit(route('chat::chat', { newChat }));
+    router.visit(route('chat::chat', { chat: newChat }));
 };
 
 const setUserPivotValues = () => {
@@ -166,10 +169,6 @@ const saveColor = async () => {
         await axios.put(updateUserUrl.value, {
             bubble_color: selectedUser.value.pivot.bubble_color,
         });
-
-        // Use below when status messages are implemented
-        // await nextTick();
-        // scrollToBottom();
     } catch {
         revertUserChanges();
     }
@@ -205,6 +204,15 @@ const saveNickname = async () => {
     }
 };
 
+const updateFromStatusMessage = (sm) => {
+    chat.value.users = chat.value.users.map((u) => {
+        if (u.id === sm.user_id) {
+            u.pivot[sm.status_type] = sm.content;
+        }
+        return u;
+    });
+};
+
 // 6. External or Helper Functions
 const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -232,6 +240,22 @@ const getTextColor = (backgroundColor) => {
     // Using the YIQ color space formula to determine brightness
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
     return yiq >= 128 ? '#000000' : '#FFFFFF'; // dark text for light backgrounds and vice versa
+};
+
+const getStatusMessageContent = (message) => {
+    let messageContent = 'Status changed';
+
+    switch (message.status_type) {
+        case 'bubble_color':
+            messageContent = `${message.user.name} got a new bubble color!`;
+            break;
+        case 'nickname':
+            messageContent = `${message.user.name} is now known as ${message.content}!`;
+            break;
+        default:
+            break;
+    }
+    return messageContent;
 };
 </script>
 <template>
@@ -322,6 +346,7 @@ const getTextColor = (backgroundColor) => {
                                 <v-infinite-scroll v-if="chat.messages.length" side="start" @load="loadMessages">
                                     <div v-for="(message, index) in chat.messages" :key="index" class="m-4">
                                         <p
+                                            v-if="message.type === 'text'"
                                             class="p-4 rounded-lg message break-all flex flex-col"
                                             :class="
                                                 message.user_id === user.id ? 'bg-blue-600 ml-20' : 'bg-green-600 mr-20'
@@ -336,6 +361,15 @@ const getTextColor = (backgroundColor) => {
                                             </span>
                                             <span> {{ message.content }} <br /> </span>
                                             <span class="text-xs mt-4">
+                                                {{ formatDate(message.sent_at) }}
+                                            </span>
+                                        </p>
+                                        <p
+                                            v-else-if="message.type === 'status'"
+                                            class="flex flex-col justify-center items-center"
+                                        >
+                                            <span class="w-fit"> {{ getStatusMessageContent(message) }} <br /> </span>
+                                            <span class="text-xs">
                                                 {{ formatDate(message.sent_at) }}
                                             </span>
                                         </p>
@@ -392,8 +426,8 @@ const getTextColor = (backgroundColor) => {
                         item-value="name"
                         return-object
                         density="comfortable"
-                        variant="no-border"
-                        class="!bg-blue-50 mb-4"
+                        variant="solo"
+                        class="!bg-blue-50 mb-4 v-select"
                     ></v-select>
                     <div class="w-full flex justify-center p-2">
                         <v-color-picker
@@ -416,6 +450,11 @@ const getTextColor = (backgroundColor) => {
     </div>
 </template>
 <style>
+.v-select,
+.v-select .v-field {
+    background-color: rgb(239 246 255);
+}
+
 .nickname-input:focus {
     box-shadow: none;
 }
