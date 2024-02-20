@@ -71,9 +71,12 @@ onMounted(() => {
         scrollToBottom();
 
         Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
-            // Kolla om sender id är user id.
-            // Om det är equal ska inte meddelandet pushas utan senaste temp message
-            // ska sättas status sent på.
+            if (e.message.user_id === user.value.user_id && e.message.type !== 'status') {
+                chat.value.messages[chat.value.messages.length - 1].status = 'sent';
+
+                return;
+            }
+
             chat.value.messages.push(e.message);
             if (e.message.type === 'status') {
                 updateFromStatusMessage(e.message);
@@ -85,26 +88,48 @@ onMounted(() => {
 });
 
 // 5. Methods
-const sendMessage = () => {
-    if (loading.value || newMessage.value === '') {
+const sendMessage = (content = null) => {
+    let messageContent = content;
+
+    // If the content is an event, it means the function was triggered by an event listener
+    // and the actual message content should be taken from newMessage.value
+    if (content instanceof Event) {
+        messageContent = newMessage.value;
+    }
+
+    if (loading.value || !messageContent) {
         return;
     }
-    // Skapa upp ett tempMessage och pusha till chat.messages.
-    // Den ska ha status sending.
+
+    const tempMessage = {
+        user_id: user.value.id,
+        content: messageContent,
+        type: 'text',
+        sent_at: new Date(),
+        status: 'sending',
+    };
+    chat.value.messages.push(tempMessage);
     loading.value = true;
-    saveMessage(newMessage.value);
+    saveMessage(messageContent, chat.value.messages.length);
     newMessage.value = '';
 };
 
-const saveMessage = async (content) => {
+const resendMessage = (index) => {
+    const message = chat.value.messages[index];
+    sendMessage(message.content);
+    chat.value.messages.splice(index, 1);
+};
+
+const saveMessage = async (content, messagesLength) => {
     try {
         await axios.post(route('chat::sendMessage', { chat: chat.value, user: user.value }), { content });
-        await nextTick();
-        scrollToBottom();
     } catch (error) {
         console.error(error);
+        chat.value.messages[messagesLength - 1].status = 'failed';
     } finally {
         loading.value = false;
+        await nextTick();
+        scrollToBottom();
     }
 };
 
@@ -245,6 +270,23 @@ const getTextColor = (backgroundColor) => {
     // Dark text for light backgrounds and vice versa
     return yiq >= 128 ? '#000000' : '#FFFFFF';
 };
+
+const getMessageStatusDate = (message) => {
+    switch (message.status) {
+        case 'sending':
+            return 'Sending...';
+        case 'sent':
+            return `Sent at ${formatDate(message.sent_at)}`;
+        case 'delivered':
+            return `Delivered at ${formatDate(message.sent_at)}`;
+        case 'read':
+            return `Sent at ${formatDate(message.sent_at)}`;
+        case 'failed':
+            return 'Message could not be sent. Try again ';
+        default:
+            return message.status;
+    }
+};
 </script>
 <template>
     <div>
@@ -353,7 +395,19 @@ const getTextColor = (backgroundColor) => {
                                             </span>
                                             <span> {{ message.content }} <br /> </span>
                                             <span class="text-xs mt-4">
-                                                {{ formatDate(message.sent_at) }}
+                                                {{ getMessageStatusDate(message) }}
+                                                <v-btn
+                                                    v-if="message.status === 'failed'"
+                                                    variant="text"
+                                                    size="regular"
+                                                    @click="resendMessage(index)"
+                                                >
+                                                    <v-icon
+                                                        icon="mdi-refresh"
+                                                        size="small"
+                                                        class="text-blue-100"
+                                                    ></v-icon>
+                                                </v-btn>
                                             </span>
                                         </p>
                                         <p

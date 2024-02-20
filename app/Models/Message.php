@@ -18,6 +18,8 @@ class Message extends Model
         'user_id',
     ];
 
+    protected $appends = ['status'];
+
     public static function loadMessages(Chat $chat, $lastMessageId)
     {
         $firstMessageId = Message::first()->id;
@@ -60,6 +62,11 @@ class Message extends Model
         $message->save();
 
         return $message;
+    }
+
+    public function getStatusAttribute(): string
+    {
+        return is_null($this->read_at) ? 'sent' : 'read';
     }
 
     public function chat()

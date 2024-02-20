@@ -24,7 +24,8 @@ class Chat extends Model
     public function loadChat()
     {
         $this->load(['users', 'messages' => function ($q) {
-            $messages = $q->with('user')->latest()->take(25)->get();
+            $messages = $q->with(['user'])->latest()->take(25)->get();
+
             return $messages->reverse();
         }]);
     }
