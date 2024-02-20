@@ -1,6 +1,13 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link } from '@inertiajs/vue3';
+
+defineProps({
+    currentMode: {
+        type: String,
+        required: true,
+    },
+});
 </script>
 
 <template>
@@ -16,5 +23,21 @@ import { Link } from '@inertiajs/vue3';
         >
             <slot />
         </div>
+        <div class="flex justify-center mt-12 login-register">
+            <p v-if="currentMode === 'register'">
+                <span> Already have an account? </span>
+                <Link href="/login" class="underline"> Login </Link>
+            </p>
+            <p v-else>
+                <span> Don't have an account yet? </span>
+                <Link href="/register" class="underline"> Register </Link>
+            </p>
+        </div>
     </div>
 </template>
+
+<style>
+.login-register {
+    color: white;
+}
+</style>

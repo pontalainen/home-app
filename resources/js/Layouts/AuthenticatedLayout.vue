@@ -6,6 +6,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import axios from 'axios';
+import { getChatName, getCurrentChatUser, getStatusMessageContent } from '@/helpers';
 
 const props = defineProps({
     currentChat: {
@@ -68,20 +69,6 @@ const getChats = async () => {
 const switchChat = (newChat) => {
     drawer.value = false;
     emit('switch-chat', newChat);
-};
-
-const getChatName = (chat) => {
-    if (chat.users.length > 2) {
-        return chat.name;
-    }
-    return chat.otherUser.pivot.nickname ? chat.otherUser.pivot.nickname : chat.otherUser.name;
-};
-
-const getCurrentChatUser = (chat) => {
-    if (!chat || !user.value) {
-        return null;
-    }
-    return chat.users.find((u) => u.id === user.value.id);
 };
 </script>
 
@@ -154,8 +141,15 @@ const getCurrentChatUser = (chat) => {
                                         </template>
 
                                         <template #content>
-                                            <DropdownLink :href="route('profile::edit')"> Profile </DropdownLink>
-                                            <DropdownLink :href="route('logout')" method="post" as="button">
+                                            <DropdownLink :href="route('profile::edit')" class="dropdown-link">
+                                                Profile
+                                            </DropdownLink>
+                                            <DropdownLink
+                                                :href="route('logout')"
+                                                method="post"
+                                                as="button"
+                                                class="dropdown-link"
+                                            >
                                                 Log Out
                                             </DropdownLink>
                                         </template>
@@ -186,25 +180,40 @@ const getCurrentChatUser = (chat) => {
                             :class="{ 'active-chat': currentChat && chat.id === currentChat.id }"
                             @click="switchChat(chat.id)"
                         >
-                            <p v-if="chat.latest_message" class="text-xs overflow-hidden text-ellipsis mt-2 quick-text">
-                                <span v-if="chat.latest_message.user.id === $page.props.auth.user.id" class="font-bold">
-                                    You:
-                                </span>
-                                <span v-else class="font-bold"> {{ chat.latest_message.user.name }}: </span>
-                                <span>{{ chat.latest_message.content }}</span>
-                            </p>
-                            <p v-else>
-                                <span class="text-xs overflow-hidden text-ellipsis mt-2 quick-text font-italic">
-                                    Say hello to {{ chat.otherUser.name }}!
-                                </span>
-                            </p>
+                            <div v-if="chat.latest_message">
+                                <p
+                                    v-if="chat.latest_message.type === 'status'"
+                                    class="text-xs overflow-hidden text-ellipsis mt-2 quick-text"
+                                >
+                                    <!-- eslint-disable-next-line vue/no-v-html -->
+                                    <span v-html="getStatusMessageContent(chat.latest_message)" />
+                                </p>
+                                <p v-else class="text-xs overflow-hidden text-ellipsis mt-2 quick-text">
+                                    <span
+                                        v-if="chat.latest_message.user.id === $page.props.auth.user.id"
+                                        class="font-bold"
+                                    >
+                                        You:
+                                    </span>
+                                    <span v-else class="font-bold"> {{ chat.latest_message.user.name }}: </span>
+                                    <span>{{ chat.latest_message.content }}</span>
+                                </p>
+                            </div>
+                            <div v-else>
+                                <p>
+                                    <span class="text-xs overflow-hidden text-ellipsis mt-2 quick-text font-italic">
+                                        Say hello to {{ chat.otherUser.name }}!
+                                    </span>
+                                </p>
+                            </div>
 
                             <v-divider
                                 class="my-2 mt-4 border-opacity-100"
                                 :thickness="2"
                                 :class="{ 'default-divider': currentChat && chat.id === currentChat.id }"
                                 :style="{
-                                    borderColor: getCurrentChatUser(chat).pivot.bubble_color ?? 'rgb(66, 126, 255)',
+                                    borderColor:
+                                        getCurrentChatUser(chat, user.id).pivot.bubble_color ?? 'rgb(66, 126, 255)',
                                 }"
                             ></v-divider>
                         </v-list-item>
@@ -265,6 +274,14 @@ const getCurrentChatUser = (chat) => {
     </v-app>
 </template>
 <style>
+.dropdown-link {
+    color: black;
+}
+
+.dropdown-link:hover {
+    color: white;
+}
+
 .app-bar {
     padding: 0 !important;
     --tw-bg-opacity: 1 !important;

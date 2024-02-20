@@ -30,7 +30,7 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
+    <GuestLayout current-mode="login">
         <Head title="Log in" />
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
@@ -43,9 +43,9 @@ const submit = () => {
 
                 <TextInput
                     id="email"
+                    v-model="form.email"
                     type="email"
                     class="mt-1 block w-full"
-                    v-model="form.email"
                     required
                     autofocus
                     autocomplete="username"
@@ -59,9 +59,9 @@ const submit = () => {
 
                 <TextInput
                     id="password"
+                    v-model="form.password"
                     type="password"
                     class="mt-1 block w-full"
-                    v-model="form.password"
                     required
                     autocomplete="current-password"
                 />
@@ -71,8 +71,8 @@ const submit = () => {
 
             <div class="block mt-4">
                 <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
+                    <Checkbox v-model:checked="form.remember" name="remember" />
+                    <span class="ms-2 text-sm text-gray-600">Remember me</span>
                 </label>
             </div>
 
@@ -80,7 +80,7 @@ const submit = () => {
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
-                    class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                     Forgot your password?
                 </Link>
@@ -92,3 +92,20 @@ const submit = () => {
         </form>
     </GuestLayout>
 </template>
+<style>
+label {
+    color: rgb(75 85 99) !important;
+}
+
+input:not([type='checkbox']) {
+    background-color: white !important;
+    color: rgb(75 85 99) !important;
+    border-color: rgb(156 163 175) !important;
+    border-style: solid;
+}
+
+input:not([type='checkbox']):focus,
+input:not([type='checkbox']):active {
+    border-color: rgb(96 165 250) !important;
+}
+</style>

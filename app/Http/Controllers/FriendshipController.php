@@ -18,15 +18,15 @@ class FriendshipController extends Controller
     {
         return Inertia::render('Friends/Friends', [
             'user' => Auth::user()->load('chats', 'friends'),
-            'modeProp' => 'discover'
+            'modeProp' => 'my-friends'
         ]);
     }
 
-    public function myFriends()
+    public function discover()
     {
         return Inertia::render('Friends/Friends', [
             'user' => Auth::user()->load('chats', 'friends'),
-            'modeProp' => 'my-friends'
+            'modeProp' => 'discover'
         ]);
     }
 

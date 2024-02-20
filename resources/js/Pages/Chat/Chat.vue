@@ -4,6 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toRefs, ref, onMounted, nextTick, watch, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
+import { getStatusMessageContent, formatDate } from '@/helpers';
 
 const { Echo } = window;
 
@@ -35,7 +36,7 @@ const isAtBottom = ref(true);
 const loading = ref(false);
 const drawer = ref(false);
 const noMoreMessages = ref(false);
-const chatOptions = ref(['Change bubble color']);
+const chatOptions = ref(['Change bubble colors']);
 const colorModalOpen = ref(false);
 const selectedUser = ref(chat.value ? chat.value.users.find((u) => u.id === user.value.id) : null);
 const prevUserValues = ref([]);
@@ -70,6 +71,9 @@ onMounted(() => {
         scrollToBottom();
 
         Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
+            // Kolla om sender id är user id.
+            // Om det är equal ska inte meddelandet pushas utan senaste temp message
+            // ska sättas status sent på.
             chat.value.messages.push(e.message);
             if (e.message.type === 'status') {
                 updateFromStatusMessage(e.message);
@@ -85,6 +89,8 @@ const sendMessage = () => {
     if (loading.value || newMessage.value === '') {
         return;
     }
+    // Skapa upp ett tempMessage och pusha till chat.messages.
+    // Den ska ha status sending.
     loading.value = true;
     saveMessage(newMessage.value);
     newMessage.value = '';
@@ -214,11 +220,6 @@ const updateFromStatusMessage = (sm) => {
 };
 
 // 6. External or Helper Functions
-const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-};
-
 const scrollToBottom = () => {
     if (chatScroll.value) {
         chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
@@ -243,22 +244,6 @@ const getTextColor = (backgroundColor) => {
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
     // Dark text for light backgrounds and vice versa
     return yiq >= 128 ? '#000000' : '#FFFFFF';
-};
-
-const getStatusMessageContent = (message) => {
-    let messageContent = 'Status changed';
-
-    switch (message.status_type) {
-        case 'bubble_color':
-            messageContent = `<strong>${message.user.name}</strong> is lookin' kinda <strong style="color: ${message.content};">${message.content}</strong>!`;
-            break;
-        case 'nickname':
-            messageContent = `<strong>${message.user.name}</strong> is now known as <strong>${message.content}</strong>!`;
-            break;
-        default:
-            break;
-    }
-    return messageContent;
 };
 </script>
 <template>

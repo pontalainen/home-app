@@ -21,7 +21,7 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
+    <GuestLayout current-mode="register">
         <Head title="Register" />
 
         <form @submit.prevent="submit">
@@ -30,9 +30,9 @@ const submit = () => {
 
                 <TextInput
                     id="name"
+                    v-model="form.name"
                     type="text"
                     class="mt-1 block w-full"
-                    v-model="form.name"
                     required
                     autofocus
                     autocomplete="name"
@@ -46,9 +46,9 @@ const submit = () => {
 
                 <TextInput
                     id="email"
+                    v-model="form.email"
                     type="email"
                     class="mt-1 block w-full"
-                    v-model="form.email"
                     required
                     autocomplete="username"
                 />
@@ -61,9 +61,9 @@ const submit = () => {
 
                 <TextInput
                     id="password"
+                    v-model="form.password"
                     type="password"
                     class="mt-1 block w-full"
-                    v-model="form.password"
                     required
                     autocomplete="new-password"
                 />
@@ -76,9 +76,9 @@ const submit = () => {
 
                 <TextInput
                     id="password_confirmation"
+                    v-model="form.password_confirmation"
                     type="password"
                     class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
                     required
                     autocomplete="new-password"
                 />
@@ -87,12 +87,12 @@ const submit = () => {
             </div>
 
             <div class="flex items-center justify-end mt-4">
-                <Link
+                <!-- <Link
                     :href="route('login')"
-                    class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    class="underline text-sm text-gray-400 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
                 >
                     Already registered?
-                </Link>
+                </Link> -->
 
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
                     Register
@@ -101,3 +101,21 @@ const submit = () => {
         </form>
     </GuestLayout>
 </template>
+
+<style>
+label {
+    color: rgb(75 85 99) !important;
+}
+
+input {
+    background-color: white !important;
+    color: rgb(75 85 99) !important;
+    border-color: rgb(156 163 175) !important;
+    border-style: solid;
+}
+
+input:focus,
+input:active {
+    border-color: rgb(96 165 250) !important;
+}
+</style>

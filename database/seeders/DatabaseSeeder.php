@@ -15,16 +15,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::factory(10)->create();
+        \App\Models\User::factory(30)->create();
 
         // \App\Models\User::factory()->create([
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
 
-        Chat::factory()
-            ->count(1)
-            ->has(Message::factory()->count(10))
-            ->create();
+        // Chat::factory()
+        //     ->count(1)
+        //     ->has(Message::factory()->count(10))
+        //     ->create();
     }
 }

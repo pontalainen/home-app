@@ -21,12 +21,13 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    // return Inertia::render('Welcome', [
+    //     'canLogin' => Route::has('login'),
+    //     'canRegister' => Route::has('register'),
+    //     'laravelVersion' => Application::VERSION,
+    //     'phpVersion' => PHP_VERSION,
+    // ]);
+    return redirect()->route('login');
 })->name('home');
 
 Route::get('/dashboard', function () {
@@ -54,9 +55,8 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::name('friends::')->middleware(['auth', 'verified'])->group(function () {
-    Route::get('/friends', [FriendshipController::class, 'index'])->name('discover');
-    Route::get('/friends/discover', [FriendshipController::class, 'index'])->name('discover');
-    Route::get('/friends/my-friends', [FriendshipController::class, 'myFriends'])->name('myFriends');
+    Route::get('/friends', [FriendshipController::class, 'index'])->name('myFriends');
+    Route::get('/friends/discover', [FriendshipController::class, 'discover'])->name('discover');
 
     Route::post('/friends/get-users', [FriendshipController::class, 'getUsers'])->name('getUsers');
     Route::post('/friends/get-friends', [FriendshipController::class, 'getFriends'])->name('getFriends');

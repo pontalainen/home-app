@@ -34,7 +34,7 @@ const userHover = ref(users.value.reduce((acc, u) => ({ ...acc, [u.id]: false })
 const isDiscoverMode = computed({
     get: () => mode.value === 'discover',
     set: (newValue) => {
-        mode.value = newValue ? 'discover' : 'my-friends';
+        mode.value = newValue ? 'discover' : '';
         history.pushState({}, '', `/friends/${mode.value}`);
         switchMode();
     },
@@ -163,7 +163,7 @@ const areFriends = (u) => {
                             <div
                                 v-for="(u, index) in users"
                                 :key="index"
-                                class="flex bg-blue-200 shadow-sm rounded-lg p-3 my-8 justify-between"
+                                class="flex bg-white shadow-sm rounded-lg p-3 my-8 justify-between"
                             >
                                 <p>
                                     {{ u.name }} <br />
