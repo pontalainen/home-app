@@ -39,7 +39,7 @@ class Message extends Model
             ->get();
     }
 
-    public static function sendMessage(Chat $chat, User $user, $request)
+    public static function sendMessage(Chat $chat, $user, $request)
     {
         $message = new self();
 
