@@ -81,7 +81,7 @@ class ChatController extends Controller
             ->limit(25)
             ->get()
             ->sortByDesc(function ($chat) {
-                if ($chat->lastMessage) {
+            if ($chat->latestMessage) {
                     return $chat->latestMessage->created_at;
                 } else {
                     return $chat->created_at;
