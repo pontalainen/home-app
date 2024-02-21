@@ -46,7 +46,9 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/chat/get-chat/{chat}', [ChatController::class, 'getChat'])->name('getChat');
 
     Route::get('/chat/{chat}', [ChatController::class, 'chat'])->name('chat');
-    Route::post('/chat/check-chat', [ChatController::class, 'checkChat'])->name('checkChat');
+    Route::post('/chat/check-chat', [ChatController::class, 'checkAndCreateChat'])->name('checkChat');
+
+    Route::post('/chat/{chat}/create-group', [ChatController::class, 'createGroupChat'])->name('createGroupChat');
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
     Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');

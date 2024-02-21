@@ -30,6 +30,17 @@ class Chat extends Model
         }]);
     }
 
+    public function createGroupChat()
+    {
+        $groupChat = self::create();
+        $groupChat->type_group = true;
+        $groupChat->save();
+
+        $groupChat->users()->attach($this->users->pluck('id'), ['joined_at' => now()]);
+
+        return $groupChat->id;
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'chat_users')

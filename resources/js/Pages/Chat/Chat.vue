@@ -26,6 +26,14 @@ const props = defineProps({
 });
 const { user, chatProp, lastMessageIdProp } = toRefs(props);
 
+const groupModalText = `Creating a <span class="font-bold"> group chat </span>
+                            will not remove this chat, but will create a new chat with up to
+                            <span class="font-bold"> 10 </span>
+                            selected users.`;
+
+const groupModalFailedText = `Failed to create group chat.<br>
+                                Please refresh the page and try again.`;
+
 // 2. Reactive State
 const chat = ref(chatProp.value);
 const lastMessageId = ref(lastMessageIdProp.value);
@@ -38,6 +46,8 @@ const drawer = ref(false);
 const noMoreMessages = ref(false);
 const chatOptions = ref(['Change bubble colors']);
 const colorModalOpen = ref(false);
+const groupModalOpen = ref(false);
+const groupCreationFailed = ref(false);
 const selectedUser = ref(chat.value ? chat.value.users.find((u) => u.id === user.value.id) : null);
 const prevUserValues = ref([]);
 const nameHover = ref(false);
@@ -244,6 +254,17 @@ const updateFromStatusMessage = (sm) => {
     });
 };
 
+const createGroupChat = async () => {
+    try {
+        const resp = await axios.post(route('chat::createGroupChat', { chat: chat.value.id }));
+        router.visit(route('chat::chat', { chat: resp.data }));
+        groupModalOpen.value = false;
+    } catch (error) {
+        groupCreationFailed.value = true;
+        console.error(error);
+    }
+};
+
 // 6. External or Helper Functions
 const scrollToBottom = () => {
     if (chatScroll.value) {
@@ -297,6 +318,19 @@ const getMessageStatusDate = (message) => {
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                         <div class="w-full -mb-12 flex justify-end">
+                            <v-btn
+                                class="mt-6 mr-8 !text-blue-100"
+                                variant="text"
+                                size="regular"
+                                @click="groupModalOpen = true"
+                            >
+                                <v-icon
+                                    v-if="chat.type_group"
+                                    icon="mdi-account-multiple-plus-outline"
+                                    size="x-large"
+                                />
+                                <v-icon v-else icon="mdi-account-group-outline" size="x-large" />
+                            </v-btn>
                             <v-menu location="bottom">
                                 <!-- eslint-disable-next-line vue/no-template-shadow -->
                                 <template #activator="{ props }">
@@ -355,7 +389,7 @@ const getMessageStatusDate = (message) => {
                                     </v-btn>
                                 </div>
                                 <p v-else class="text-blue-100 font-bold text-xl relative">
-                                    <span v-if="chat.users.length > 2">
+                                    <span v-if="chat.type_group">
                                         {{ chat.name }}
                                     </span>
                                     <span v-else>
@@ -491,6 +525,31 @@ const getMessageStatusDate = (message) => {
 
                         <v-btn color="white" text="Save" @click="saveColor"></v-btn>
                     </v-card-actions>
+                </v-card>
+            </template>
+        </v-dialog>
+
+        <v-dialog v-model="groupModalOpen" width="500" transition="dialog-bottom-transition">
+            <template #default>
+                <v-card class="!bg-gray-800 flex flex-col">
+                    <v-btn
+                        class="!absolute top-2 right-3"
+                        variant="text"
+                        color="white"
+                        size="regular"
+                        @click="groupModalOpen = false"
+                    >
+                        <v-icon icon="mdi-close"></v-icon>
+                    </v-btn>
+                    <div class="w-full flex flex-col justify-center p-8">
+                        <p class="text-white pb-6 text-center">
+                            <!-- eslint-disable vue/no-v-html -->
+                            <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
+                            <span v-else v-html="groupModalText" />
+                            <!-- eslint-enable vue/no-v-html -->
+                        </p>
+                        <v-btn color="white" class="p-2" @click="createGroupChat">Create group chat</v-btn>
+                    </div>
                 </v-card>
             </template>
         </v-dialog>

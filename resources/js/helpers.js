@@ -22,7 +22,7 @@ export const formatDate = (dateString) => {
 };
 
 export const getChatName = (chat) => {
-    if (chat.users.length > 2) {
+    if (chat.type_group) {
         return chat.name;
     }
 

@@ -46,7 +46,7 @@ class ChatController extends Controller
         ]);
     }
 
-    public function checkChat(Request $request)
+    public function checkAndCreateChat(Request $request)
     {
         $chat = Chat::whereHas('users', function ($q) use ($request) {
             $q->where('user_id', $request->user);
@@ -95,6 +95,11 @@ class ChatController extends Controller
 
         // Converted to array to keep order
         return response()->json($chats->values()->all());
+    }
+
+    public function createGroupChat(Chat $chat)
+    {
+        return $chat->createGroupChat();
     }
 
     public function loadMessages(Chat $chat, Request $request)
