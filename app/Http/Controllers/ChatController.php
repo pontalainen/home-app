@@ -102,6 +102,14 @@ class ChatController extends Controller
         return $chat->createGroupChat();
     }
 
+    public function getAvailableMembers(Chat $chat)
+    {
+        $existingUserIds = $chat->users->pluck('id');
+        $availableFriends = Auth::user()->friends()->whereNotIn('users.id', $existingUserIds)->get();
+
+        return response()->json($availableFriends);
+    }
+
     public function loadMessages(Chat $chat, Request $request)
     {
         $this->authorize('view', $chat);

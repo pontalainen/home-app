@@ -34,6 +34,9 @@ const groupModalText = `Creating a <span class="font-bold"> group chat </span>
 const groupModalFailedText = `Failed to create group chat.<br>
                                 Please refresh the page and try again.`;
 
+const groupInviteMembersText = `Add members to this group chat by selecting them below.<br>
+                                    You can add up to 10 members to a group chat.`;
+
 // 2. Reactive State
 const chat = ref(chatProp.value);
 const lastMessageId = ref(lastMessageIdProp.value);
@@ -53,6 +56,7 @@ const prevUserValues = ref([]);
 const nameHover = ref(false);
 const editingName = ref(false);
 const nicknameInputEl = ref('');
+const availableMembers = ref([]);
 
 if (chat.value) {
     chat.value.messages = chat.value.messages.reverse();
@@ -72,7 +76,7 @@ const otherUser = computed(() => {
 });
 
 // 4. Lifecycle Hooks
-onMounted(() => {
+onMounted(async () => {
     if (chat.value) {
         chatScroll.value.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = chatScroll.value;
@@ -94,6 +98,8 @@ onMounted(() => {
             await nextTick();
             scrollToBottom();
         });
+
+        await getAvailableMembers();
     }
 });
 
@@ -262,6 +268,16 @@ const createGroupChat = async () => {
     } catch (error) {
         groupCreationFailed.value = true;
         console.error(error);
+    }
+};
+
+const getAvailableMembers = async () => {
+    try {
+        const resp = await axios.get(route('chat::getAvailableMembers', chat.value.id));
+        availableMembers.value = resp.data;
+    } catch (error) {
+        console.error(error);
+        availableMembers.value = [];
     }
 };
 
@@ -542,13 +558,32 @@ const getMessageStatusDate = (message) => {
                         <v-icon icon="mdi-close"></v-icon>
                     </v-btn>
                     <div class="w-full flex flex-col justify-center p-8">
-                        <p class="text-white pb-6 text-center">
-                            <!-- eslint-disable vue/no-v-html -->
-                            <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
-                            <span v-else v-html="groupModalText" />
-                            <!-- eslint-enable vue/no-v-html -->
-                        </p>
-                        <v-btn color="white" class="p-2" @click="createGroupChat">Create group chat</v-btn>
+                        <div v-if="chat.type_group">
+                            <p class="text-white pb-6 text-center">
+                                <!-- eslint-disable-next-line vue/no-v-html -->
+                                <span v-html="groupInviteMembersText" />
+                            </p>
+                            <v-autocomplete
+                                clearable
+                                chips
+                                multiple
+                                return-object
+                                auto-select-first
+                                item-title="name"
+                                item-value="id"
+                                label="New group members"
+                                :items="availableMembers"
+                            ></v-autocomplete>
+                        </div>
+                        <div v-else>
+                            <p class="text-white pb-6 text-center">
+                                <!-- eslint-disable vue/no-v-html -->
+                                <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
+                                <span v-else v-html="groupModalText" />
+                                <!-- eslint-enable vue/no-v-html -->
+                            </p>
+                            <v-btn color="white" class="p-2" @click="createGroupChat">Create group chat</v-btn>
+                        </div>
                     </div>
                 </v-card>
             </template>
@@ -556,6 +591,13 @@ const getMessageStatusDate = (message) => {
     </div>
 </template>
 <style>
+.v-field__field,
+.v-field__overlay,
+.v-input__control {
+    background-color: white;
+    outline: none;
+}
+
 .v-select,
 .v-select .v-field {
     background-color: rgb(239 246 255);
