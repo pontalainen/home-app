@@ -101,6 +101,8 @@ onMounted(async () => {
                 return;
             }
 
+            // TODO: Handle temp messages with incoming "own" messages
+
             chat.value.messages.push(e.message);
             if (e.message.type === 'status') {
                 updateFromStatusMessage(e.message);
