@@ -8,6 +8,15 @@ export const getStatusMessageContent = (message) => {
         case 'nickname':
             messageContent = `<strong>${message.user.name}</strong> is now known as <strong>${message.content}</strong>!`;
             break;
+        case 'members_added': {
+            const namesArray = message.content.split('|');
+            const formattedNames = namesArray.length > 1
+                ? `${namesArray.slice(0, -1).map((name) => `<strong>${name}</strong>`).join(', ')} and <strong>${namesArray.slice(-1)}</strong>`
+                : `<strong>${namesArray[0]}</strong>`;
+
+            messageContent = `${formattedNames} have joined the chat!`;
+            break;
+        }
         default:
             break;
     }
@@ -22,7 +31,7 @@ export const formatDate = (dateString) => {
 };
 
 export const getChatName = (chat) => {
-    if (chat.type_group) {
+    if (chat.is_group) {
         return chat.name;
     }
 

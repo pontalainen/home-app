@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Chat;
 use App\Models\User;
+use Auth;
 
 class Message extends Model
 {
@@ -39,7 +40,7 @@ class Message extends Model
             ->get();
     }
 
-    public static function sendMessage(Chat $chat, $user, $request)
+    public static function sendMessage(Chat $chat, $request)
     {
         $message = new self();
 
@@ -58,7 +59,7 @@ class Message extends Model
 
         $message->sent_at = now();
         $message->chat()->associate($chat);
-        $message->user()->associate($user);
+        $message->user()->associate(Auth::user());
         $message->save();
 
         return $message;

@@ -81,7 +81,7 @@ class ChatController extends Controller
             ->limit(25)
             ->get()
             ->sortByDesc(function ($chat) {
-            if ($chat->latestMessage) {
+                if ($chat->latestMessage) {
                     return $chat->latestMessage->created_at;
                 } else {
                     return $chat->created_at;
@@ -110,6 +110,32 @@ class ChatController extends Controller
         return response()->json($availableFriends);
     }
 
+    public function addMembers(Chat $chat, Request $request)
+    {
+        $this->authorize('view', $chat);
+
+        $currentDateTime = now();
+        $chat->users()->attach(array_fill_keys($request->members, ['joined_at' => $currentDateTime]));
+
+        $memberNames = User::find($request->members)->pluck('name')->all();
+        $memberNamesString = implode('|', $memberNames);
+
+        $messageData = [
+            'type' => 'status',
+            'status_type' => 'members_added',
+            'content' => $memberNamesString,
+        ];
+
+        try {
+            $newMessage = Message::sendMessage($chat, $messageData);
+            broadcast(new MessageSent($newMessage));
+
+            return 'ok';
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
     public function loadMessages(Chat $chat, Request $request)
     {
         $this->authorize('view', $chat);
@@ -126,7 +152,7 @@ class ChatController extends Controller
             ]);
     }
 
-    public function sendMessage(Chat $chat, User $user, Request $request)
+    public function sendMessage(Chat $chat, Request $request)
     {
         $this->authorize('view', $chat);
         $request->validate([
@@ -134,7 +160,7 @@ class ChatController extends Controller
         ]);
 
         try {
-            $newMessage = Message::sendMessage($chat, $user, $request);
+            $newMessage = Message::sendMessage($chat, $request);
             broadcast(new MessageSent($newMessage));
 
             return 'ok';
@@ -176,7 +202,7 @@ class ChatController extends Controller
         ];
 
         try {
-            $newMessage = Message::sendMessage($chat, $user, $messageData);
+            $newMessage = Message::sendMessage($chat, $messageData);
             broadcast(new MessageSent($newMessage));
 
             return 'ok';

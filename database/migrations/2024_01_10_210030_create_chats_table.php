@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('name')->default('New chat');
-            $table->boolean('type_group')->default(false);
+            $table->boolean('is_group')->default(false);
 
             $table->timestamps();
         });

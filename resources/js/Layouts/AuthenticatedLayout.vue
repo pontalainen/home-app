@@ -200,10 +200,9 @@ const switchChat = (newChat) => {
                                 </p>
                             </div>
                             <div v-else>
-                                <p>
-                                    <span class="text-xs overflow-hidden text-ellipsis mt-2 quick-text font-italic">
-                                        Say hello to {{ chat.otherUser.name }}!
-                                    </span>
+                                <p class="text-xs overflow-hidden text-ellipsis mt-2 quick-text font-italic">
+                                    <span v-if="chat.is_group"> Send the group a greeting! </span>
+                                    <span v-else> Say hello to {{ chat.otherUser.name }}! </span>
                                 </p>
                             </div>
 

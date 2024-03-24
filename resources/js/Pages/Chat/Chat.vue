@@ -26,10 +26,11 @@ const props = defineProps({
 });
 const { user, chatProp, lastMessageIdProp } = toRefs(props);
 
+// Constant/non-reactive variables
 const groupModalText = `Creating a <span class="font-bold"> group chat </span>
                             will not remove this chat, but will create a new chat with up to
                             <span class="font-bold"> 10 </span>
-                            selected users.`;
+                            friends.`;
 
 const groupModalFailedText = `Failed to create group chat.<br>
                                 Please refresh the page and try again.`;
@@ -57,6 +58,8 @@ const nameHover = ref(false);
 const editingName = ref(false);
 const nicknameInputEl = ref('');
 const availableMembers = ref([]);
+const selectedMembers = ref([]);
+const addingMembers = ref(false);
 
 if (chat.value) {
     chat.value.messages = chat.value.messages.reverse();
@@ -65,6 +68,13 @@ if (chat.value) {
 // 3. Computed Properties and Watchers
 watch(selectedUser, () => {
     revertUserChanges();
+});
+
+watch(groupModalOpen, (newValue) => {
+    if (!newValue) {
+        selectedMembers.value = [];
+        addingMembers.value = false;
+    }
 });
 
 const updateUserUrl = computed(() => {
@@ -138,7 +148,7 @@ const resendMessage = (index) => {
 
 const saveMessage = async (content, messagesLength) => {
     try {
-        await axios.post(route('chat::sendMessage', { chat: chat.value, user: user.value }), { content });
+        await axios.post(route('chat::sendMessage', { chat: chat.value }), { content });
     } catch (error) {
         console.error(error);
         chat.value.messages[messagesLength - 1].status = 'failed';
@@ -281,6 +291,23 @@ const getAvailableMembers = async () => {
     }
 };
 
+const addMembers = async () => {
+    if (selectedMembers.value.length === 0) {
+        return;
+    }
+    addingMembers.value = true;
+
+    try {
+        const resp = await axios.post(route('chat::addMembers', chat.value.id), {
+            members: selectedMembers.value,
+        });
+    } catch (error) {
+        console.error(error);
+    } finally {
+        groupModalOpen.value = false;
+    }
+};
+
 // 6. External or Helper Functions
 const scrollToBottom = () => {
     if (chatScroll.value) {
@@ -340,11 +367,7 @@ const getMessageStatusDate = (message) => {
                                 size="regular"
                                 @click="groupModalOpen = true"
                             >
-                                <v-icon
-                                    v-if="chat.type_group"
-                                    icon="mdi-account-multiple-plus-outline"
-                                    size="x-large"
-                                />
+                                <v-icon v-if="chat.is_group" icon="mdi-account-multiple-plus-outline" size="x-large" />
                                 <v-icon v-else icon="mdi-account-group-outline" size="x-large" />
                             </v-btn>
                             <v-menu location="bottom">
@@ -405,7 +428,7 @@ const getMessageStatusDate = (message) => {
                                     </v-btn>
                                 </div>
                                 <p v-else class="text-blue-100 font-bold text-xl relative">
-                                    <span v-if="chat.type_group">
+                                    <span v-if="chat.is_group">
                                         {{ chat.name }}
                                     </span>
                                     <span v-else>
@@ -462,11 +485,11 @@ const getMessageStatusDate = (message) => {
                                         </p>
                                         <p
                                             v-else-if="message.type === 'status'"
-                                            class="flex flex-col justify-center items-center"
+                                            class="flex flex-col justify-center items-center text-center"
                                         >
                                             <!-- eslint-disable-next-line vue/no-v-html -->
-                                            <span class="w-fit" v-html="getStatusMessageContent(message)" />
-                                            <span class="text-xs">
+                                            <span class="w-fit mx-auto" v-html="getStatusMessageContent(message)" />
+                                            <span class="text-xs mx-auto">
                                                 {{ formatDate(message.sent_at) }}
                                             </span>
                                         </p>
@@ -480,8 +503,10 @@ const getMessageStatusDate = (message) => {
                                 </v-infinite-scroll>
 
                                 <div v-else class="empty-message-container">
-                                    <p class="empty-message">
-                                        There are no messages in this chat yet. Why don't you start a conversation?
+                                    <p class="empty-message flex flex-col space-y-2">
+                                        <span> There are no messages in this chat yet. </span>
+                                        <span> Awkward... </span>
+                                        <span> Why don't you start a conversation? </span>
                                     </p>
                                 </div>
                             </div>
@@ -497,7 +522,8 @@ const getMessageStatusDate = (message) => {
                                 <v-progress-circular
                                     v-if="loading"
                                     indeterminate
-                                    color="white ml-2"
+                                    color="white"
+                                    class="ml-2"
                                 ></v-progress-circular>
                             </div>
                         </div>
@@ -558,31 +584,44 @@ const getMessageStatusDate = (message) => {
                         <v-icon icon="mdi-close"></v-icon>
                     </v-btn>
                     <div class="w-full flex flex-col justify-center p-8">
-                        <div v-if="chat.type_group">
+                        <div v-if="chat.is_group">
                             <p class="text-white pb-6 text-center">
                                 <!-- eslint-disable-next-line vue/no-v-html -->
                                 <span v-html="groupInviteMembersText" />
                             </p>
-                            <v-autocomplete
-                                clearable
-                                chips
-                                multiple
-                                return-object
-                                auto-select-first
-                                item-title="name"
-                                item-value="id"
-                                label="New group members"
-                                :items="availableMembers"
-                            ></v-autocomplete>
+                            <div class="flex items-end">
+                                <v-autocomplete
+                                    v-model="selectedMembers"
+                                    clearable
+                                    chips
+                                    multiple
+                                    auto-select-first
+                                    item-title="name"
+                                    item-value="id"
+                                    label="New group members"
+                                    :items="availableMembers"
+                                ></v-autocomplete>
+                                <v-btn class="ml-8 flex" @click="addMembers">
+                                    <v-progress-circular
+                                        v-if="addingMembers"
+                                        indeterminate
+                                        :size="20"
+                                        color="black"
+                                    ></v-progress-circular>
+                                    <v-icon v-else icon="mdi-send-check-outline"></v-icon>
+                                </v-btn>
+                            </div>
                         </div>
-                        <div v-else>
+                        <div v-else class="flex flex-col justify-center items-center">
                             <p class="text-white pb-6 text-center">
                                 <!-- eslint-disable vue/no-v-html -->
                                 <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
                                 <span v-else v-html="groupModalText" />
                                 <!-- eslint-enable vue/no-v-html -->
                             </p>
-                            <v-btn color="white" class="p-2" @click="createGroupChat">Create group chat</v-btn>
+                            <v-btn color="white" class="p-2" @click="createGroupChat">
+                                Create group with {{ otherUser.name }}
+                            </v-btn>
                         </div>
                     </div>
                 </v-card>
@@ -591,6 +630,27 @@ const getMessageStatusDate = (message) => {
     </div>
 </template>
 <style>
+.v-autocomplete .v-label {
+    background: white;
+    padding: 5px 0px;
+    width: 93%;
+    margin-top: -7px;
+}
+
+.v-autocomplete .v-field__input {
+    max-height: 8rem;
+    overflow: scroll;
+}
+
+.v-autocomplete .v-input__control,
+.v-autocomplete .v-field__field {
+    border-radius: 4px;
+}
+
+.v-autocomplete input {
+    box-shadow: none !important;
+}
+
 .v-field__field,
 .v-field__overlay,
 .v-input__control {

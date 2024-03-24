@@ -51,9 +51,10 @@ Route::name('chat::')->middleware(['auth', 'verified'])->group(function () {
     Route::post('/chat/check-chat', [ChatController::class, 'checkAndCreateChat'])->name('checkChat');
 
     Route::post('/chat/{chat}/create-group', [ChatController::class, 'createGroupChat'])->name('createGroupChat');
+    Route::post('/chat/{chat}/add-members', [ChatController::class, 'addMembers'])->name('addMembers');
 
     Route::post('/chat/{chat}/messages', [ChatController::class, 'loadMessages'])->name('loadMessages');
-    Route::post('chat/{chat}/user/{user}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
+    Route::post('chat/{chat}/sendMessage', [ChatController::class, 'sendMessage'])->name('sendMessage');
 
     Route::put('/chat/{chat}/user/{user}/update', [ChatController::class, 'updateUser'])->name('updateUser');
 });
