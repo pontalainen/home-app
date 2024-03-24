@@ -42,7 +42,7 @@ class Message extends Model
             ->get();
     }
 
-    public static function sendMessage(Chat $chat, $request)
+    public static function sendMessage(Chat $chat, $request, User $user = null)
     {
         $message = new self();
 
@@ -55,7 +55,7 @@ class Message extends Model
             if ($key === 'image') {
                 // Call function to store image
             } elseif ($key === 'tempId') {
-                continue;
+                $message->tempIdValue = $request->input('tempId');
             } else {
                 $message->{$key} = $attr;
             }
@@ -63,10 +63,8 @@ class Message extends Model
 
         $message->sent_at = now();
         $message->chat()->associate($chat);
-        $message->user()->associate(Auth::user());
+        $message->user()->associate($user ?: Auth::user());
         $message->save();
-
-        $message->tempIdValue = $request->input('tempId');
 
         return $message;
     }
@@ -78,7 +76,6 @@ class Message extends Model
 
     public function getTempIdAttribute()
     {
-        // dd('hej');
         return $this->tempIdValue;
     }
 

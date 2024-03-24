@@ -17,6 +17,9 @@ export const getStatusMessageContent = (message) => {
             messageContent = `${formattedNames} have joined the chat!`;
             break;
         }
+        case 'name':
+            messageContent = `<strong>${message.user.name}</strong> named the chat <strong>${message.content}</strong>!`;
+            break;
         default:
             break;
     }

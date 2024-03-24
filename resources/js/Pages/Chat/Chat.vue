@@ -13,6 +13,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    userFriends: {
+        type: Array,
+        required: true,
+    },
     chatProp: {
         type: Object,
         required: false,
@@ -24,7 +28,7 @@ const props = defineProps({
         default: 1,
     },
 });
-const { user, chatProp, lastMessageIdProp } = toRefs(props);
+const { user, chatProp, lastMessageIdProp, userFriends } = toRefs(props);
 
 // Constant/non-reactive variables
 const groupModalText = `Creating a <span class="font-bold"> group chat </span>
@@ -48,9 +52,9 @@ const isAtBottom = ref(true);
 const loading = ref(false);
 const drawer = ref(false);
 const noMoreMessages = ref(false);
-const chatOptions = ref(['Change bubble colors']);
 const colorModalOpen = ref(false);
 const groupModalOpen = ref(false);
+const membersModalOpen = ref(false);
 const groupCreationFailed = ref(false);
 const selectedUser = ref(chat.value ? chat.value.users.find((u) => u.id === user.value.id) : null);
 const prevUserValues = ref([]);
@@ -60,6 +64,7 @@ const nicknameInputEl = ref('');
 const availableMembers = ref([]);
 const selectedMembers = ref([]);
 const addingMembers = ref(false);
+const viewingMembers = ref(true);
 
 if (chat.value) {
     chat.value.messages = chat.value.messages.reverse();
@@ -74,15 +79,39 @@ watch(groupModalOpen, (newValue) => {
     if (!newValue) {
         selectedMembers.value = [];
         addingMembers.value = false;
+        viewingMembers.value = false;
     }
+});
+
+const chatOptions = computed(() => {
+    return chat.value.is_group
+        ? ['Change bubble colors', 'Add members']
+        : ['Change bubble colors', 'Create group chat'];
 });
 
 const updateUserUrl = computed(() => {
     return route('chat::updateUser', { chat: chat.value.id, user: selectedUser.value.id });
 });
 
+const updateChatUrl = computed(() => {
+    return route('chat::update', { chat: chat.value.id });
+});
+
 const otherUser = computed(() => {
     return chat.value ? chat.value.users.find((u) => u.id !== user.value.id) : null;
+});
+
+const nicknameModel = computed({
+    get() {
+        return chat.value.is_group ? chat.value.name : selectedUser.value.pivot.nickname;
+    },
+    set(value) {
+        if (chat.value.is_group) {
+            chat.value.name = value;
+        } else {
+            selectedUser.value.pivot.nickname = value;
+        }
+    },
 });
 
 // 4. Lifecycle Hooks
@@ -95,19 +124,9 @@ onMounted(async () => {
         scrollToBottom();
 
         Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
-            if (e.tempId && e.message) {
-                e.message.tempId = e.tempId;
-            }
-
-            if (e.message.user_id === user.value.user_id && e.message.type !== 'status') {
-                chat.value.messages[chat.value.messages.length - 1].status = 'sent';
-
-                return;
-            }
-
-            const tempMessage = chat.value.messages.find((message) => message.tempId === e.message.tempId);
-            if (tempMessage) {
-                tempMessage.status = 'sent';
+            if (e.tempId && e.message.user_id === user.value.id) {
+                const tempMessage = chat.value.messages.find((message) => message.tempId === e.tempId);
+                if (tempMessage) tempMessage.status = 'sent';
             } else {
                 chat.value.messages.push(e.message);
             }
@@ -142,6 +161,9 @@ const sendMessage = (content = null) => {
     const tempMessage = {
         tempId,
         user_id: user.value.id,
+        user: {
+            name: user.value.name,
+        },
         content: messageContent,
         type: 'text',
         sent_at: new Date(),
@@ -264,23 +286,41 @@ const editName = () => {
     });
 };
 
-const cancelNameEdit = () => {
+const cancelNameEdit = async () => {
+    await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+    });
     editingName.value = false;
     revertUserChanges();
 };
 
 const saveNickname = async () => {
-    try {
-        await axios.put(updateUserUrl.value, {
-            nickname: selectedUser.value.pivot.nickname,
-        });
-        editingName.value = false;
-    } catch {
-        revertUserChanges();
+    if (chat.value.is_group) {
+        try {
+            await axios.put(updateChatUrl.value, {
+                name: nicknameModel.value,
+            });
+            editingName.value = false;
+        } catch {
+            revertUserChanges();
+        }
+    } else {
+        try {
+            await axios.put(updateUserUrl.value, {
+                nickname: selectedUser.value.pivot.nickname,
+            });
+            editingName.value = false;
+        } catch {
+            revertUserChanges();
+        }
     }
 };
 
 const updateFromStatusMessage = (sm) => {
+    if (sm.status_type === 'name') {
+        chat.value.name = sm.content;
+        return;
+    }
     chat.value.users = chat.value.users.map((u) => {
         if (u.id === sm.user_id) {
             u.pivot[sm.status_type] = sm.content;
@@ -370,6 +410,11 @@ const getMessageStatusDate = (message) => {
             return message.status;
     }
 };
+
+const getMemberOptions = (member) => {
+    if (userFriends.value.includes(member.id)) return ['Remove friend'];
+    return ['Add friend'];
+};
 </script>
 <template>
     <div>
@@ -381,13 +426,13 @@ const getMessageStatusDate = (message) => {
                     <div class="chat-container bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                         <div class="w-full -mb-12 flex justify-end">
                             <v-btn
-                                class="mt-6 mr-8 !text-blue-100"
+                                v-if="chat.is_group"
+                                class="mt-6 mr-4 !text-blue-100"
                                 variant="text"
                                 size="regular"
-                                @click="groupModalOpen = true"
+                                @click="membersModalOpen = true"
                             >
-                                <v-icon v-if="chat.is_group" icon="mdi-account-multiple-plus-outline" size="x-large" />
-                                <v-icon v-else icon="mdi-account-group-outline" size="x-large" />
+                                <v-icon icon="mdi-account-group-outline" size="x-large" />
                             </v-btn>
                             <v-menu location="bottom">
                                 <!-- eslint-disable-next-line vue/no-template-shadow -->
@@ -429,12 +474,13 @@ const getMessageStatusDate = (message) => {
                                     <div class="flex justify-center nickname-container" @blur="cancelNameEdit">
                                         <input
                                             ref="nicknameInputEl"
-                                            v-model="selectedUser.pivot.nickname"
+                                            v-model="nicknameModel"
                                             placeholder="User nickname"
                                             class="nickname-input text-blue-100 font-bold text-xl text-center p-0"
                                             variant="solo"
                                             maxlength="25"
                                             @keyup.enter="saveNickname"
+                                            @focusout="cancelNameEdit"
                                         />
                                     </div>
                                     <v-btn
@@ -446,23 +492,25 @@ const getMessageStatusDate = (message) => {
                                         <v-icon icon="mdi-send-check-outline" class="text-blue-100"></v-icon>
                                     </v-btn>
                                 </div>
-                                <p v-else class="text-blue-100 font-bold text-xl relative">
-                                    <span v-if="chat.is_group">
-                                        {{ chat.name }}
-                                    </span>
-                                    <span v-else>
-                                        {{ otherUser.pivot.nickname ?? otherUser.name }}
-                                    </span>
+                                <div v-else class="text-blue-100 font-bold text-xl relative" style="max-width: 50%">
+                                    <p class="truncate">
+                                        <span v-if="chat.is_group">
+                                            {{ chat.name }}
+                                        </span>
+                                        <span v-else>
+                                            {{ otherUser.pivot.nickname ?? otherUser.name }}
+                                        </span>
+                                    </p>
                                     <v-btn
                                         variant="text"
                                         size="regular"
-                                        class="ml-2 !absolute top-0 bottom-0"
+                                        class="ml-2 !absolute top-0 bottom-0 -right-6"
                                         :class="{ '!hidden': !nameHover }"
                                         @click="editName"
                                     >
                                         <v-icon icon="mdi-pencil" size="x-small" class="text-blue-100"></v-icon>
                                     </v-btn>
-                                </p>
+                                </div>
                             </div>
 
                             <div
@@ -605,7 +653,84 @@ const getMessageStatusDate = (message) => {
                         <v-icon icon="mdi-close"></v-icon>
                     </v-btn>
                     <div class="w-full flex flex-col justify-center p-8">
-                        <div v-if="chat.is_group">
+                        <div class="flex flex-col justify-center items-center">
+                            <p class="text-white pb-6 text-center">
+                                <!-- eslint-disable vue/no-v-html -->
+                                <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
+                                <span v-else v-html="groupModalText" />
+                                <!-- eslint-enable vue/no-v-html -->
+                            </p>
+                            <v-btn color="white" class="p-2" @click="createGroupChat">
+                                Create group with {{ otherUser.name }}
+                            </v-btn>
+                        </div>
+                    </div>
+                </v-card>
+            </template>
+        </v-dialog>
+
+        <v-dialog v-model="membersModalOpen" width="500" transition="dialog-bottom-transition">
+            <template #default>
+                <v-card class="!bg-gray-800 flex flex-col">
+                    <v-btn
+                        class="!absolute top-2 right-3"
+                        variant="text"
+                        color="white"
+                        size="regular"
+                        @click="membersModalOpen = false"
+                    >
+                        <v-icon icon="mdi-close"></v-icon>
+                    </v-btn>
+                    <div class="w-full flex flex-col justify-center p-8">
+                        <div
+                            v-if="viewingMembers"
+                            class="overflow-y-scroll max-h-96 flex flex-col justify-center items-center"
+                        >
+                            <div
+                                v-for="(member, index) in chat.users"
+                                :key="index"
+                                class="bg-white my-2 flex w-96 rounded items-center"
+                            >
+                                <p variant="text" size="small" color="black" class="-mr-14 ml-4">p-img</p>
+                                <div class="py-2 mx-auto flex flex-col justify-center items-center">
+                                    <p class="font-bold">
+                                        {{ member.name }}
+                                    </p>
+                                    <small>
+                                        Member since
+                                        <span class="font-bold">{{ formatDate(member.pivot.joined_at) }}</span>
+                                    </small>
+                                </div>
+                                <v-menu location="top">
+                                    <!-- eslint-disable-next-line vue/no-template-shadow -->
+                                    <template #activator="{ props }">
+                                        <v-btn
+                                            variant="text"
+                                            size="regular"
+                                            color="black"
+                                            class="-ml-14 mr-4"
+                                            v-bind="props"
+                                        >
+                                            <v-icon icon="mdi-dots-horizontal"></v-icon>
+                                        </v-btn>
+                                    </template>
+
+                                    <v-list width="160">
+                                        <v-list-item v-for="(option, i) in getMemberOptions(member)" :key="i">
+                                            <v-list-item-title @click="console.log('tja')">
+                                                <v-btn variant="text">
+                                                    {{ option }}
+                                                </v-btn>
+                                            </v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
+                                <!-- <v-btn variant="text" size="regular" color="black" class="-ml-14 mr-4">
+                                    <v-icon icon="mdi-dots-horizontal"></v-icon>
+                                </v-btn> -->
+                            </div>
+                        </div>
+                        <div v-else class="flex flex-col justify-center items-center">
                             <p class="text-white pb-6 text-center">
                                 <!-- eslint-disable-next-line vue/no-v-html -->
                                 <span v-html="groupInviteMembersText" />
@@ -633,17 +758,6 @@ const getMessageStatusDate = (message) => {
                                 </v-btn>
                             </div>
                         </div>
-                        <div v-else class="flex flex-col justify-center items-center">
-                            <p class="text-white pb-6 text-center">
-                                <!-- eslint-disable vue/no-v-html -->
-                                <span v-if="groupCreationFailed" v-html="groupModalFailedText" />
-                                <span v-else v-html="groupModalText" />
-                                <!-- eslint-enable vue/no-v-html -->
-                            </p>
-                            <v-btn color="white" class="p-2" @click="createGroupChat">
-                                Create group with {{ otherUser.name }}
-                            </v-btn>
-                        </div>
                     </div>
                 </v-card>
             </template>
@@ -661,6 +775,10 @@ const getMessageStatusDate = (message) => {
 .v-autocomplete .v-field__input {
     max-height: 8rem;
     overflow: scroll;
+}
+
+.v-autocomplete .v-input__control {
+    width: 20rem;
 }
 
 .v-autocomplete .v-input__control,

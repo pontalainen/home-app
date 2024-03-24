@@ -41,6 +41,7 @@ class ChatController extends Controller
 
         return Inertia::render('Chat/Chat', [
             'user' => Auth::user(),
+            'userFriends' => Auth::user()->friends->pluck('id'),
             'chatProp' => $chat,
             'lastMessageIdProp' => $chat->messages->first() ? $chat->messages->last()->id : 1,
         ]);
@@ -169,6 +170,40 @@ class ChatController extends Controller
         }
     }
 
+    public function update(Chat $chat, Request $request)
+    {
+        $this->authorize('view', $chat);
+
+        $request->validate([
+            'name' => ['nullable', 'string', 'max:25'],
+        ]);
+
+        $status_type = null;
+        if ($request->has('name')) {
+            $chat->name = $request->input('name');
+            $status_type = 'name';
+        }
+        $chat->save();
+        $content = $request->input($status_type);
+
+        $messageData = [
+            'type' => 'status',
+            'status_type' => $status_type,
+            'content' => $content,
+        ];
+
+        try {
+            $newMessage = Message::sendMessage($chat, $messageData);
+            broadcast(new MessageSent($newMessage));
+
+            return 'ok';
+        } catch (Exception $e) {
+            return $e;
+        }
+
+        return 'ok';
+    }
+
     public function updateUser(Chat $chat, User $user, Request $request)
     {
         $this->authorize('view', $chat);
@@ -202,7 +237,7 @@ class ChatController extends Controller
         ];
 
         try {
-            $newMessage = Message::sendMessage($chat, $messageData);
+            $newMessage = Message::sendMessage($chat, $messageData, $user);
             broadcast(new MessageSent($newMessage));
 
             return 'ok';
