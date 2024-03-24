@@ -19,7 +19,9 @@ class Message extends Model
         'user_id',
     ];
 
-    protected $appends = ['status'];
+    protected $tempIdValue;
+
+    protected $appends = ['status', 'tempId'];
 
     public static function loadMessages(Chat $chat, $lastMessageId)
     {
@@ -52,6 +54,8 @@ class Message extends Model
         foreach ($attributesToUpdate as $key => $attr) {
             if ($key === 'image') {
                 // Call function to store image
+            } elseif ($key === 'tempId') {
+                continue;
             } else {
                 $message->{$key} = $attr;
             }
@@ -62,12 +66,20 @@ class Message extends Model
         $message->user()->associate(Auth::user());
         $message->save();
 
+        $message->tempIdValue = $request->input('tempId');
+
         return $message;
     }
 
     public function getStatusAttribute(): string
     {
         return is_null($this->read_at) ? 'sent' : 'read';
+    }
+
+    public function getTempIdAttribute()
+    {
+        // dd('hej');
+        return $this->tempIdValue;
     }
 
     public function chat()

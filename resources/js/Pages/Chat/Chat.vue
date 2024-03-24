@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toRefs, ref, onMounted, nextTick, watch, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { getStatusMessageContent, formatDate } from '@/helpers';
+import { getStatusMessageContent, formatDate, genTempId } from '@/helpers';
 
 const { Echo } = window;
 
@@ -95,18 +95,27 @@ onMounted(async () => {
         scrollToBottom();
 
         Echo.private(`chat.${chat.value.id}`).listen('MessageSent', async (e) => {
+            if (e.tempId && e.message) {
+                e.message.tempId = e.tempId;
+            }
+
             if (e.message.user_id === user.value.user_id && e.message.type !== 'status') {
                 chat.value.messages[chat.value.messages.length - 1].status = 'sent';
 
                 return;
             }
 
-            // TODO: Handle temp messages with incoming "own" messages
+            const tempMessage = chat.value.messages.find((message) => message.tempId === e.message.tempId);
+            if (tempMessage) {
+                tempMessage.status = 'sent';
+            } else {
+                chat.value.messages.push(e.message);
+            }
 
-            chat.value.messages.push(e.message);
             if (e.message.type === 'status') {
                 updateFromStatusMessage(e.message);
             }
+
             await nextTick();
             scrollToBottom();
         });
@@ -129,7 +138,9 @@ const sendMessage = (content = null) => {
         return;
     }
 
+    const tempId = genTempId();
     const tempMessage = {
+        tempId,
         user_id: user.value.id,
         content: messageContent,
         type: 'text',
@@ -137,8 +148,9 @@ const sendMessage = (content = null) => {
         status: 'sending',
     };
     chat.value.messages.push(tempMessage);
+
     loading.value = true;
-    saveMessage(messageContent, chat.value.messages.length);
+    saveMessage(messageContent, tempId);
     newMessage.value = '';
 };
 
@@ -148,12 +160,17 @@ const resendMessage = (index) => {
     chat.value.messages.splice(index, 1);
 };
 
-const saveMessage = async (content, messagesLength) => {
+const saveMessage = async (content, tempId) => {
     try {
-        await axios.post(route('chat::sendMessage', { chat: chat.value }), { content });
+        const resp = await axios.post(route('chat::sendMessage', { chat: chat.value.id }), { content, tempId });
+        if (resp.status === 200) {
+            const tempMessage = chat.value.messages.find((message) => message.tempId === tempId);
+            if (tempMessage) tempMessage.status = 'sent';
+        }
     } catch (error) {
         console.error(error);
-        chat.value.messages[messagesLength - 1].status = 'failed';
+        const tempMessage = chat.value.messages.find((message) => message.tempId === tempId);
+        if (tempMessage) tempMessage.status = 'failed';
     } finally {
         loading.value = false;
         await nextTick();
@@ -300,7 +317,7 @@ const addMembers = async () => {
     addingMembers.value = true;
 
     try {
-        const resp = await axios.post(route('chat::addMembers', chat.value.id), {
+        await axios.post(route('chat::addMembers', chat.value.id), {
             members: selectedMembers.value,
         });
     } catch (error) {
@@ -342,11 +359,11 @@ const getMessageStatusDate = (message) => {
         case 'sending':
             return 'Sending...';
         case 'sent':
-            return `Sent at ${formatDate(message.sent_at)}`;
+            return `Sent at ${formatDate(message.sent_at, !!message.id)}`;
         case 'delivered':
-            return `Delivered at ${formatDate(message.sent_at)}`;
+            return `Delivered at ${formatDate(message.sent_at, !!message.id)}`;
         case 'read':
-            return `Sent at ${formatDate(message.sent_at)}`;
+            return `Sent at ${formatDate(message.sent_at, !!message.id)}`;
         case 'failed':
             return 'Message could not be sent. Try again ';
         default:
@@ -480,7 +497,9 @@ const getMessageStatusDate = (message) => {
                                                     <v-icon
                                                         icon="mdi-refresh"
                                                         size="small"
-                                                        class="text-blue-100"
+                                                        :style="{
+                                                            color: getTextColor(getBubbleColor(message.user_id)),
+                                                        }"
                                                     ></v-icon>
                                                 </v-btn>
                                             </span>

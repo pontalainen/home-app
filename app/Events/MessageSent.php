@@ -16,6 +16,7 @@ class MessageSent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     private $message;
+    private $tempId;
 
     /**
      * Create a new event instance.
@@ -23,6 +24,7 @@ class MessageSent implements ShouldBroadcast
     public function __construct($newMessage)
     {
         $this->message = $newMessage;
+        $this->tempId = $newMessage->tempId;
     }
 
     /**
@@ -42,6 +44,9 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastWith()
     {
-        return ['message' => $this->message];
+        return [
+            'message' => $this->message,
+            'tempId' => $this->tempId,
+        ];
     }
 }

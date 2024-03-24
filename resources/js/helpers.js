@@ -24,11 +24,26 @@ export const getStatusMessageContent = (message) => {
     return messageContent;
 };
 
-export const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+export const formatDate = (dateString, isUTC = true) => {
+    // Adjust the dateString based on whether it's UTC or already in the correct timezone
+    const adjustedDateString = isUTC ? `${dateString}Z` : dateString;
+    const date = new Date(adjustedDateString);
+    const options = {
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit', 
 
-    return new Date(dateString).toLocaleDateString(undefined, options);
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+
+    return date.toLocaleDateString(undefined, options);
 };
+
+export const genTempId = () =>
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15);
 
 export const getChatName = (chat) => {
     if (chat.is_group) {
