@@ -75,11 +75,13 @@ watch(selectedUser, () => {
     revertUserChanges();
 });
 
-watch(groupModalOpen, (newValue) => {
+watch(membersModalOpen, (newValue) => {
     if (!newValue) {
-        selectedMembers.value = [];
-        addingMembers.value = false;
-        viewingMembers.value = false;
+        setTimeout(() => {
+            selectedMembers.value = [];
+            addingMembers.value = false;
+            viewingMembers.value = true;
+        }, 100);
     }
 });
 
@@ -249,6 +251,23 @@ const revertUserChanges = () => {
         }
         return u;
     });
+};
+
+const openModal = (option) => {
+    switch (option) {
+        case 'Change bubble colors':
+            openColorModal();
+            break;
+        case 'Create group chat':
+            groupModalOpen.value = true;
+            break;
+        case 'Add members':
+            viewingMembers.value = false;
+            membersModalOpen.value = true;
+            break;
+        default:
+            break;
+    }
 };
 
 const openColorModal = () => {
@@ -453,7 +472,7 @@ const getMemberOptions = (member) => {
                                         :key="i"
                                         :value="i"
                                         class="!h-min !min-h-0"
-                                        @click="openColorModal"
+                                        @click="openModal(option)"
                                     >
                                         <v-list-item-title class="!min-h-0">
                                             {{ option }}
